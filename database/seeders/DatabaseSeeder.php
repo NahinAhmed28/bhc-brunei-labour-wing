@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Desk;
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -30,13 +29,12 @@ class DatabaseSeeder extends Seeder
         $roles['administrator']->permissions()->sync(Permission::whereIn('name', ['manage-masters', 'create-tokens', 'edit-tokens', 'manage-applicants', 'manage-documents', 'view-reports'])->pluck('id'));
         $roles['data-entry']->permissions()->sync(Permission::whereIn('name', ['manage-applicants', 'manage-documents'])->pluck('id'));
         $roles['viewer']->permissions()->sync(Permission::whereIn('name', ['view-reports', 'view-audit'])->pluck('id'));
-        User::updateOrCreate(['email' => 'admin@bhcbrunei.gov.bd'], ['name' => 'System Administrator', 'password' => 'ChangeMe123!', 'role_id' => $roles['super-admin']->id, 'is_active' => true, 'email_verified_at' => now()]);
-        User::updateOrCreate(['email' => 'operations@bhcbrunei.gov.bd'], ['name' => 'Operations Officer', 'password' => 'ChangeMe123!', 'role_id' => $roles['administrator']->id, 'is_active' => true, 'email_verified_at' => now()]);
         foreach ([['Reception Desk', 'REC'], ['Visa Wing', 'VISA'], ['Labour Wing', 'LAB'], ['Consular Approval', 'CONS']] as [$name, $code]) {
             Desk::firstOrCreate(['code' => $code], ['name' => $name, 'is_active' => true]);
         }
 
         $this->call([
+            UserSeeder::class,
             CompanySeeder::class,
             AgencySeeder::class,
             TokenSeeder::class,
