@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TokenRequest;
 use App\Models\Agency;
 use App\Models\Company;
-use App\Models\Desk;
 use App\Models\Token;
 use App\Models\TokenCategory;
-use App\Models\TokenDeskHistory;
+use App\Models\TokenTransferHistory;
+use App\Models\User;
 use App\Services\AuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
@@ -20,13 +20,13 @@ class TokenController extends Controller
 {
     public function index(Request $r)
     {
-        $tokens = Token::with(['company', 'agency', 'category', 'currentDesk'])->withCount('applicants')->when($r->q, function ($q, $v) {
+        $tokens = Token::with(['company', 'agency', 'category', 'currentHolder.role'])->withCount('applicants')->when($r->q, function ($q, $v) {
             $q->where(function ($s) use ($v) {
                 $s->where('token_number', 'like', "%$v%")->orWhere('bhc_number', 'like', "%$v%")->orWhereHas('company', fn ($x) => $x->where('name', 'like', "%$v%"))->orWhereHas('agency', fn ($x) => $x->where('name', 'like', "%$v%"));
             });
-        })->when($r->company_id, fn ($q, $v) => $q->where('company_id', $v))->when($r->agency_id, fn ($q, $v) => $q->where('agency_id', $v))->when($r->company_name, fn ($q, $v) => $q->whereHas('company', fn ($companyQuery) => $companyQuery->where('name', 'like', "%$v%")))->when($r->agency_name, fn ($q, $v) => $q->whereHas('agency', fn ($agencyQuery) => $agencyQuery->where('name', 'like', "%$v%")))->when($r->category_id, fn ($q, $v) => $q->where('token_category_id', $v))->when($r->desk_id, fn ($q, $v) => $q->where('current_desk_id', $v))->when($r->boesl_status, fn ($q, $v) => $q->where('boesl_status', $v))->when($r->bhc_status === 'pending', fn ($q) => $q->whereNull('bhc_number'))->when($r->bhc_status === 'assigned', fn ($q) => $q->whereNotNull('bhc_number'))->when($r->created === 'today', fn ($q) => $q->whereDate('created_at', today()))->when($r->pre_selected !== null && $r->pre_selected !== '', fn ($q) => $q->where('pre_selected', $r->boolean('pre_selected')))->latest('received_on')->paginate(15)->withQueryString();
+        })->when($r->company_id, fn ($q, $v) => $q->where('company_id', $v))->when($r->agency_id, fn ($q, $v) => $q->where('agency_id', $v))->when($r->company_name, fn ($q, $v) => $q->whereHas('company', fn ($companyQuery) => $companyQuery->where('name', 'like', "%$v%")))->when($r->agency_name, fn ($q, $v) => $q->whereHas('agency', fn ($agencyQuery) => $agencyQuery->where('name', 'like', "%$v%")))->when($r->category_id, fn ($q, $v) => $q->where('token_category_id', $v))->when($r->holder_id, fn ($q, $v) => $q->where('current_holder_id', $v))->when($r->boesl_status, fn ($q, $v) => $q->where('boesl_status', $v))->when($r->bhc_status === 'pending', fn ($q) => $q->whereNull('bhc_number'))->when($r->bhc_status === 'assigned', fn ($q) => $q->whereNotNull('bhc_number'))->when($r->created === 'today', fn ($q) => $q->whereDate('created_at', today()))->when($r->pre_selected !== null && $r->pre_selected !== '', fn ($q) => $q->where('pre_selected', $r->boolean('pre_selected')))->latest('received_on')->paginate(15)->withQueryString();
 
-        return view('tokens.index', ['tokens' => $tokens, 'preSelectedCount' => Token::where('pre_selected', true)->count(), 'companies' => Company::orderBy('name')->get(), 'agencies' => Agency::orderBy('name')->get(), 'categories' => TokenCategory::orderBy('name')->get(), 'desks' => Desk::orderBy('display_order')->get()]);
+        return view('tokens.index', ['tokens' => $tokens, 'preSelectedCount' => Token::where('pre_selected', true)->count(), 'companies' => Company::orderBy('name')->get(), 'agencies' => Agency::orderBy('name')->get(), 'categories' => TokenCategory::orderBy('name')->get(), 'users' => User::with('role')->where('is_active', true)->orderBy('name')->get()]);
     }
 
     public function create()
@@ -63,8 +63,8 @@ class TokenController extends Controller
             $data['created_by'] = $r->user()->id;
             $data['updated_by'] = $r->user()->id;
             $t = Token::create($data);
-            if ($t->current_desk_id) {
-                TokenDeskHistory::create(['token_id' => $t->id, 'new_desk_id' => $t->current_desk_id, 'changed_by' => $r->user()->id, 'arrived_at' => now(), 'remarks' => 'Initial desk assignment']);
+            if ($t->current_holder_id) {
+                TokenTransferHistory::create(['token_id' => $t->id, 'new_holder_id' => $t->current_holder_id, 'transferred_by' => $r->user()->id, 'transferred_at' => now(), 'remarks' => 'Initial file assignment']);
             }
             AuditService::record('create', 'tokens', $t, [], $t->toArray());
 
@@ -76,7 +76,7 @@ class TokenController extends Controller
 
     public function show(Token $token)
     {
-        $token->load(['company', 'agency', 'category', 'currentDesk', 'creator', 'applicants', 'deskHistories.previousDesk', 'deskHistories.newDesk', 'deskHistories.user', 'documents']);
+        $token->load(['company', 'agency', 'category', 'currentHolder.role', 'creator', 'applicants', 'transferHistories.previousHolder', 'transferHistories.newHolder', 'transferHistories.transferredBy', 'documents']);
 
         return view('tokens.show', compact('token'));
     }
@@ -87,13 +87,13 @@ class TokenController extends Controller
             'company',
             'agency',
             'category',
-            'currentDesk',
+            'currentHolder.role',
             'creator',
             'updater',
             'applicants',
-            'deskHistories.previousDesk',
-            'deskHistories.newDesk',
-            'deskHistories.user',
+            'transferHistories.previousHolder',
+            'transferHistories.newHolder',
+            'transferHistories.transferredBy',
             'documents' => fn ($query) => $query
                 ->whereNull('applicant_id')
                 ->whereIn('type', ['confirmation-letter', 'demand-letter'])
@@ -119,7 +119,17 @@ class TokenController extends Controller
 
     public function edit(Token $token)
     {
-        return view('tokens.form', $this->formData($token));
+        $token->load(['transferHistories.previousHolder', 'transferHistories.newHolder', 'transferHistories.transferredBy']);
+        $tokenDocuments = $token->documents()
+            ->whereNull('applicant_id')
+            ->whereIn('type', ['confirmation-letter', 'demand-letter'])
+            ->orderByDesc('version')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('type')
+            ->keyBy('type');
+
+        return view('tokens.form', $this->formData($token) + compact('tokenDocuments'));
     }
 
     public function update(TokenRequest $r, Token $token)
@@ -161,21 +171,20 @@ class TokenController extends Controller
 
         $old = $token->toArray();
         DB::transaction(function () use ($r, $token, $data, $old, $changeReason) {
-            $previousDesk = $token->current_desk_id;
+            $previousHolder = $token->current_holder_id;
             $token->update($data + ['updated_by' => $r->user()->id]);
-            if ((string) $previousDesk !== (string) $token->current_desk_id && $token->current_desk_id) {
-                TokenDeskHistory::where('token_id', $token->id)->whereNull('departed_at')->update(['departed_at' => now()]);
-                TokenDeskHistory::create(['token_id' => $token->id, 'previous_desk_id' => $previousDesk, 'new_desk_id' => $token->current_desk_id, 'changed_by' => $r->user()->id, 'arrived_at' => now(), 'remarks' => $changeReason]);
+            if ((string) $previousHolder !== (string) $token->current_holder_id) {
+                TokenTransferHistory::create(['token_id' => $token->id, 'previous_holder_id' => $previousHolder, 'new_holder_id' => $token->current_holder_id, 'transferred_by' => $r->user()->id, 'transferred_at' => now(), 'remarks' => $changeReason]);
             }
             AuditService::record('update', 'tokens', $token, $old, $token->fresh()->toArray(), $changeReason);
         });
 
-        return redirect()->route('tokens.show', $token)->with('success', 'Token updated and history recorded.');
+        return redirect()->route('tokens.edit', $token)->with('success', 'Token updated and transfer history recorded.');
     }
 
     public function pdf(Token $token)
     {
-        $token->load(['company', 'agency', 'category', 'currentDesk']);
+        $token->load(['company', 'agency', 'category', 'currentHolder']);
         AuditService::record('download-pdf', 'tokens', $token);
 
         return Pdf::loadView('pdf.token', compact('token'))->setPaper('a4')->download($token->token_number.'.pdf');
@@ -194,7 +203,7 @@ class TokenController extends Controller
 
     private function formData(Token $token): array
     {
-        return ['token' => $token, 'companies' => Company::where('is_active', true)->orderBy('name')->get(), 'agencies' => Agency::where('is_active', true)->orderBy('name')->get(), 'categories' => TokenCategory::where('is_active', true)->orderBy('display_order')->get(), 'desks' => Desk::where('is_active', true)->orderBy('display_order')->get()];
+        return ['token' => $token, 'companies' => Company::where('is_active', true)->orderBy('name')->get(), 'agencies' => Agency::where('is_active', true)->orderBy('name')->get(), 'categories' => TokenCategory::where('is_active', true)->orderBy('display_order')->get(), 'users' => User::with('role')->where('is_active', true)->orderBy('name')->get()];
     }
 
     /**

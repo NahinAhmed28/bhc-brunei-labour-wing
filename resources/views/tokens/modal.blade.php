@@ -22,14 +22,12 @@
                         ['Token category', $token->category->name],
                         ['Company', $token->company->name],
                         ['Agency', $token->agency->name],
-                        ['Current desk', $token->currentDesk?->name ?: 'Unassigned'],
+                        ['File holder', $token->currentHolder?->name ?: 'Unassigned'],
                         ['Agent or representative', $token->agent_name ?: 'Not recorded'],
                         ['Received on', $token->received_on->format('d M Y')],
                         ['Demanded workers', number_format($token->demanded_workers)],
                         ['Approved workers', number_format($token->approved_workers)],
                         ['Pre selected applicant', $token->pre_selected ? 'Yes' : 'No'],
-                        ['Amount', $token->amount !== null ? 'BND '.number_format((float) $token->amount, 2) : 'Not recorded'],
-                        ['Receipt number', $token->receipt_number ?: 'Not recorded'],
                         ['BHC number', $token->bhc_number ?: 'Pending'],
                     ] as [$label, $value])
                         <div>
@@ -78,18 +76,18 @@
             </section>
 
             <section class="token-modal-section">
-                <h3 class="token-modal-section-title">Desk history</h3>
-                @forelse($token->deskHistories as $history)
+                <h3 class="token-modal-section-title">File transfer history</h3>
+                @forelse($token->transferHistories as $history)
                     <div class="token-history-item">
                         <span class="token-history-marker" aria-hidden="true"></span>
                         <div>
-                            <strong>{{ $history->previousDesk?->name ?: 'Unassigned' }} to {{ $history->newDesk->name }}</strong>
-                            <div class="small text-secondary">{{ $history->arrived_at->format('d M Y, H:i') }} · {{ $history->user->name }}</div>
+                            <strong>{{ $history->previousHolder?->name ?: 'Unassigned' }} to {{ $history->newHolder?->name ?: 'Unassigned' }}</strong>
+                            <div class="small text-secondary">{{ $history->transferred_at->format('d M Y, H:i') }} &middot; Transferred by {{ $history->transferredBy->name }}</div>
                             @if($history->remarks)<div class="small mt-1">{{ $history->remarks }}</div>@endif
                         </div>
                     </div>
                 @empty
-                    <p class="text-secondary mb-0">No desk movement has been recorded.</p>
+                    <p class="text-secondary mb-0">No file transfer has been recorded.</p>
                 @endforelse
             </section>
 

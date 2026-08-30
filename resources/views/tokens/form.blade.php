@@ -104,17 +104,6 @@
                     <input class="form-control" name="agent_name" value="{{ old('agent_name', $token->agent_name) }}">
                 </div>
 
-                <div class="col-md-4">
-                    <label class="form-label">Amount</label>
-                    <input class="form-control" type="number" step="0.01" min="0" name="amount"
-                           value="{{ old('amount', $token->amount) }}">
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Receipt Number</label>
-                    <input class="form-control" name="receipt_number" value="{{ old('receipt_number', $token->receipt_number) }}">
-                </div>
-
                 <div class="col-md-4 d-flex align-items-end pb-2">
                     <div class="form-check form-switch">
                         <input type="hidden" name="pre_selected" value="0">
@@ -130,7 +119,7 @@
 
     <div class="card mb-4">
         <div class="card-header bg-white p-4">
-            <h2 class="section-title mb-0">Processing and desk</h2>
+            <h2 class="section-title mb-0">Processing and file assignment</h2>
         </div>
         <div class="card-body p-4">
             <div class="row g-3">
@@ -170,15 +159,16 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Desk Status</label>
-                    <select class="form-select" name="current_desk_id">
+                    <label class="form-label">File Assigned To</label>
+                    <select class="form-select" name="current_holder_id">
                         <option value="">Unassigned</option>
-                        @foreach($desks as $x)
-                            <option value="{{ $x->id }}" @selected(old('current_desk_id', $token->current_desk_id) == $x->id)>
-                                {{ $x->name }}
+                        @foreach($users as $userOption)
+                            <option value="{{ $userOption->id }}" @selected(old('current_holder_id', $token->current_holder_id) == $userOption->id)>
+                                {{ $userOption->name }} · {{ $userOption->role?->label ?: 'No role' }}
                             </option>
                         @endforeach
                     </select>
+                    @error('current_holder_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="col-md-4">
@@ -204,7 +194,7 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">BOESL / Desk Change Reason</label>
+                    <label class="form-label">Transfer / Protected Change Reason</label>
                     <input class="form-control" name="change_reason" value="{{ old('change_reason') }}"
                            placeholder="Required for protected changes">
                 </div>
@@ -224,22 +214,74 @@
 </form>
 
 @if($token->exists)
+    <div class="card mb-4">
+        <div class="card-header bg-white p-4">
+            <div class="d-flex align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="page-eyebrow">Official attachments</div>
+                    <h2 class="section-title mb-0">Confirmation and demand letters</h2>
+                </div>
+                <span class="badge text-bg-light">PDF or image · max 10 MB</span>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4">
+                @foreach(['confirmation-letter' => 'Confirmation Letter', 'demand-letter' => 'Demand Letter'] as $type => $label)
+                    @php($document = $tokenDocuments->get($type))
+                    <div class="col-lg-6">
+                        <div class="border rounded-3 p-3 h-100">
+                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h3 class="h6 mb-1">{{ $label }}</h3>
+                                    <p class="small text-secondary mb-0">
+                                        {{ $document ? $document->original_name : 'No file uploaded yet.' }}
+                                    </p>
+                                </div>
+                                @if($document)
+                                    <a class="btn btn-sm btn-light" href="{{ route('documents.preview', $document) }}" target="_blank" rel="noopener">
+                                        <i class="bi bi-eye me-1" aria-hidden="true"></i>Preview v{{ $document->version }}
+                                    </a>
+                                @endif
+                            </div>
+
+                            <form method="post" enctype="multipart/form-data" action="{{ route('tokens.documents.store', $token) }}">
+                                @csrf
+                                <input type="hidden" name="type" value="{{ $type }}">
+                                <label class="form-label" for="{{ $type }}-file">{{ $document ? 'Upload a new version' : 'Choose a file' }}</label>
+                                <div class="input-group">
+                                    <input class="form-control" id="{{ $type }}-file" type="file" name="file"
+                                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
+                                    <button class="btn btn-outline-primary" type="submit">
+                                        <i class="bi bi-upload me-1" aria-hidden="true"></i>Upload
+                                    </button>
+                                </div>
+                                @if(old('type') === $type)
+                                    @error('file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @endif
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header bg-white p-4">
-            <h2 class="section-title mb-0">Desk Status History</h2>
+            <h2 class="section-title mb-0">File Transfer History</h2>
         </div>
         <div class="card-body">
             <div class="timeline">
-                @forelse($token->deskHistories()->with(['newDesk','user'])->get() as $history)
+                @forelse($token->transferHistories as $history)
                     <div class="timeline-item">
-                        <strong>{{ $history->newDesk->name }}</strong>
+                        <strong>{{ $history->previousHolder?->name ?: 'Unassigned' }} → {{ $history->newHolder?->name ?: 'Unassigned' }}</strong>
                         <div class="small text-secondary">
-                            {{ $history->arrived_at->format('d M Y, H:i') }} · {{ $history->user->name }}
+                            {{ $history->transferred_at->format('d M Y, H:i') }} &middot; Transferred by {{ $history->transferredBy->name }}
                         </div>
                         <div class="small">{{ $history->remarks }}</div>
                     </div>
                 @empty
-                    <p class="text-secondary">No desk movement recorded.</p>
+                    <p class="text-secondary">No file transfer has been recorded.</p>
                 @endforelse
             </div>
         </div>

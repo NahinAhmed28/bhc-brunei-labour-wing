@@ -68,6 +68,31 @@ class TokenDocumentTest extends TestCase
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
+    public function test_token_edit_page_renders_letter_uploads_and_the_latest_preview(): void
+    {
+        [$administrator, $token] = $this->createToken('administrator');
+        $confirmationLetter = Document::create([
+            'token_id' => $token->id,
+            'type' => 'confirmation-letter',
+            'version' => 2,
+            'original_name' => 'confirmation-v2.pdf',
+            'path' => 'documents/tokens/'.$token->id.'/confirmation-v2.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+            'uploaded_by' => $administrator->id,
+        ]);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.edit', $token));
+
+        $response->assertSeeText('Confirmation and demand letters');
+        $response->assertSee('enctype="multipart/form-data"', false);
+        $this->assertSame(2, substr_count($response->getContent(), 'action="'.route('tokens.documents.store', $token).'"'));
+        $response->assertSee('name="type" value="confirmation-letter"', false);
+        $response->assertSee('name="type" value="demand-letter"', false);
+        $response->assertSee('href="'.route('documents.preview', $confirmationLetter).'"', false);
+        $response->assertSeeText('Preview v2');
+    }
+
     public function test_uploading_an_existing_letter_type_creates_a_new_version(): void
     {
         Storage::fake('local');

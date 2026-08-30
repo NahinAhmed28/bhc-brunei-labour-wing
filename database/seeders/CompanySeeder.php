@@ -15,8 +15,10 @@ class CompanySeeder extends Seeder
      */
     public function run(): void
     {
-        $administratorId = User::where('email', 'admin@bhcbrunei.gov.bd')->value('id')
-            ?? throw new LogicException('Seed the administrator account before seeding companies.');
+        $administratorId = User::query()
+            ->whereHas('role', fn ($query) => $query->whereIn('name', ['administrator', 'super-admin']))
+            ->value('id')
+            ?? throw new LogicException('Seed an administrator account before seeding companies.');
 
         foreach (array_chunk($this->records(), 200) as $records) {
             Company::upsert(

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Token extends Model
@@ -51,6 +53,11 @@ class Token extends Model
         return $this->belongsTo(Desk::class, 'current_desk_id');
     }
 
+    public function currentHolder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'current_holder_id');
+    }
+
     public function applicants()
     {
         return $this->hasMany(Applicant::class);
@@ -59,6 +66,11 @@ class Token extends Model
     public function deskHistories()
     {
         return $this->hasMany(TokenDeskHistory::class)->latest('arrived_at');
+    }
+
+    public function transferHistories(): HasMany
+    {
+        return $this->hasMany(TokenTransferHistory::class)->latest('transferred_at');
     }
 
     public function documents()

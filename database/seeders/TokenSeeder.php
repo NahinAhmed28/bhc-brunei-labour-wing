@@ -18,8 +18,10 @@ class TokenSeeder extends Seeder
      */
     public function run(): void
     {
-        $administratorId = User::where('email', 'admin@bhcbrunei.gov.bd')->value('id')
-            ?? throw new LogicException('Seed the administrator account before seeding tokens.');
+        $administratorId = User::query()
+            ->whereHas('role', fn ($query) => $query->whereIn('name', ['administrator', 'super-admin']))
+            ->value('id')
+            ?? throw new LogicException('Seed an administrator account before seeding tokens.');
 
         TokenCategory::upsert([
             ['name' => 'Demand Letter Submission', 'code' => 'DLS', 'is_active' => true, 'display_order' => 1, 'created_at' => now(), 'updated_at' => now()],

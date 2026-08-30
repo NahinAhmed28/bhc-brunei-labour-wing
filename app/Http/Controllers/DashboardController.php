@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\AuditLog;
-use App\Models\Desk;
 use App\Models\Token;
+use App\Models\User;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -25,7 +25,7 @@ class DashboardController extends Controller
 
         return view('dashboard', [
             'metrics' => $metrics,
-            'deskCounts' => Desk::withCount('tokens')->orderBy('display_order')->get(),
+            'holderCounts' => User::withCount('heldTokens')->where('is_active', true)->orderBy('name')->get(),
             'recent' => AuditLog::with('user')->latest()->limit(8)->get(),
         ]);
     }

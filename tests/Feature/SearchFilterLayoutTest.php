@@ -36,7 +36,7 @@ class SearchFilterLayoutTest extends TestCase
     public static function registerFilterPages(): array
     {
         return [
-            'tokens' => ['/tokens', 'filter-grid', ['q', 'company_name', 'agency_name', 'category_id', 'desk_id', 'boesl_status', 'bhc_status', 'created', 'pre_selected']],
+            'tokens' => ['/tokens', 'filter-grid', ['q', 'company_name', 'agency_name', 'category_id', 'holder_id', 'boesl_status', 'bhc_status', 'created', 'pre_selected']],
             'applicants' => ['/applicants', 'filter-grid', ['q', 'visa_status', 'flight_status', 'insurance_status', 'ic_status']],
             'companies' => ['/companies', 'filter-grid filter-grid-compact', ['q']],
             'agencies' => ['/agencies', 'filter-grid filter-grid-compact', ['q']],
@@ -97,7 +97,7 @@ class SearchFilterLayoutTest extends TestCase
     public function test_company_search_finds_legacy_contact_fields(): void
     {
         $this->seed();
-        $administrator = User::where('email', 'admin@bhcbrunei.gov.bd')->firstOrFail();
+        $administrator = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->firstOrFail();
 
         $response = $this->actingAs($administrator)->get('/companies?q=atkperpetual%40gmail.com');
 
@@ -107,7 +107,7 @@ class SearchFilterLayoutTest extends TestCase
     public function test_agency_search_finds_legacy_contact_fields(): void
     {
         $this->seed();
-        $administrator = User::where('email', 'admin@bhcbrunei.gov.bd')->firstOrFail();
+        $administrator = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->firstOrFail();
 
         $response = $this->actingAs($administrator)->get('/agencies?q=%2B6738212701');
 

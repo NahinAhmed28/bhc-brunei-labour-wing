@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class TokenRequest extends FormRequest
 {
@@ -20,15 +21,13 @@ class TokenRequest extends FormRequest
             'company_id' => 'required|exists:companies,id',
             'agency_id' => 'required|exists:agencies,id',
             'token_category_id' => 'required|exists:token_categories,id',
-            'current_desk_id' => 'nullable|exists:desks,id',
+            'current_holder_id' => ['nullable', Rule::exists('users', 'id')->where('is_active', true)],
             'agent_name' => 'nullable|max:255',
             'received_on' => 'required|date',
             'demanded_workers' => 'nullable|integer|min:1|max:10000',
             'required_visa_attestation' => 'nullable|integer|min:1|max:10000',
             'approved_workers' => 'nullable|integer|min:0|max:10000',
             'pre_selected' => 'nullable|boolean',
-            'amount' => 'nullable|numeric|min:0',
-            'receipt_number' => 'nullable|max:100',
             'bhc_number' => 'nullable|max:100',
             'boesl_status' => 'required|in:pending,submitted,returned,not-required',
             'boesl_date' => 'nullable|date',

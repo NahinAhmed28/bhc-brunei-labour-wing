@@ -25,7 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/configuration', [ConfigurationController::class, 'index'])->name('configuration')->middleware('role:super-admin');
     Route::post('/configuration/categories', [ConfigurationController::class, 'category'])->name('configuration.categories')->middleware('role:super-admin');
     Route::post('/configuration/desks', [ConfigurationController::class, 'desk'])->name('configuration.desks')->middleware('role:super-admin');
-    Route::resource('tokens', TokenController::class)->only('index', 'show');
+    Route::resource('tokens', TokenController::class)->only('index');
     Route::get('/tokens/{token}/modal', [TokenController::class, 'modal'])->name('tokens.modal');
     Route::get('/tokens/{token}/applicants/modal', [TokenController::class, 'applicantsModal'])->name('tokens.applicants.modal');
     Route::get('/tokens/{token}/pdf', [TokenController::class, 'pdf'])->name('tokens.pdf');
@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/tokens/{token}/cancel', [TokenController::class, 'cancel'])->name('tokens.cancel');
         Route::post('/tokens/{token}/documents', [DocumentController::class, 'storeToken'])->name('tokens.documents.store');
     });
+    Route::resource('tokens', TokenController::class)->only('show');
     Route::resource('applicants', ApplicantController::class)->only('index');
     Route::middleware('role:super-admin,administrator,data-entry')->group(function () {
         Route::resource('applicants', ApplicantController::class)->only('create', 'store', 'edit', 'update');

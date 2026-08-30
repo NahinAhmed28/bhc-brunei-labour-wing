@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Agency;
 use App\Models\Applicant;
 use App\Models\Company;
-use App\Models\Desk;
 use App\Models\Role;
 use App\Models\Token;
 use App\Models\TokenCategory;
@@ -30,17 +29,19 @@ class PlatformWorkflowTest extends TestCase
 
     public function test_administrator_can_create_token_and_history(): void
     {
-        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
-        $response = $this->actingAs($user)->post('/tokens', ['company_id' => Company::first()->id, 'agency_id' => Agency::first()->id, 'token_category_id' => TokenCategory::first()->id, 'current_desk_id' => Desk::first()->id, 'received_on' => today()->format('Y-m-d'), 'demanded_workers' => 5, 'approved_workers' => 3, 'boesl_status' => 'pending', 'visa_status' => 'pending', 'file_status' => 'active']);
+        $user = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->first();
+        $holder = User::where('email', 'boeseladmin@gmail.com')->firstOrFail();
+        $response = $this->actingAs($user)->post('/tokens', ['company_id' => Company::first()->id, 'agency_id' => Agency::first()->id, 'token_category_id' => TokenCategory::first()->id, 'current_holder_id' => $holder->id, 'received_on' => today()->format('Y-m-d'), 'demanded_workers' => 5, 'approved_workers' => 3, 'boesl_status' => 'pending', 'visa_status' => 'pending', 'file_status' => 'active']);
         $response->assertRedirect();
         $token = Token::latest('id')->first();
         $this->assertStringStartsWith('BHC-', $token->token_number);
-        $this->assertCount(1, $token->deskHistories);
+        $this->assertSame($holder->id, $token->current_holder_id);
+        $this->assertCount(1, $token->transferHistories);
     }
 
     public function test_administrator_cannot_change_protected_token_fields(): void
     {
-        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $user = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->first();
         $token = Token::first();
         $original = $token->company_id;
         $other = Company::whereKeyNot($original)->first();
@@ -51,7 +52,7 @@ class PlatformWorkflowTest extends TestCase
 
     public function test_company_create_rejects_hyphens(): void
     {
-        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $user = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->first();
         $response = $this->actingAs($user)->post('/companies', ['name' => 'Invalid-Company', 'is_active' => 1]);
 
         $response->assertSessionHasErrors(['name' => 'Names may not contain hyphens or dots.']);
@@ -60,7 +61,7 @@ class PlatformWorkflowTest extends TestCase
 
     public function test_agency_create_rejects_unicode_hyphens(): void
     {
-        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $user = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->first();
         $response = $this->actingAs($user)->post('/agencies', ['name' => 'Invalid–Agency', 'is_active' => 1]);
 
         $response->assertSessionHasErrors(['name' => 'Names may not contain hyphens or dots.']);
@@ -69,7 +70,7 @@ class PlatformWorkflowTest extends TestCase
 
     public function test_company_edit_rejects_unicode_minus_as_a_hyphen(): void
     {
-        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $user = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->first();
         $company = Company::firstOrFail();
         $originalName = $company->name;
         $response = $this->actingAs($user)->put(route('companies.update', $company), ['name' => 'Invalid−Company', 'is_active' => 1]);
@@ -80,7 +81,7 @@ class PlatformWorkflowTest extends TestCase
 
     public function test_agency_edit_rejects_hyphens(): void
     {
-        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $user = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->first();
         $agency = Agency::firstOrFail();
         $originalName = $agency->name;
         $response = $this->actingAs($user)->put(route('agencies.update', $agency), ['name' => 'Invalid-Agency', 'is_active' => 1]);

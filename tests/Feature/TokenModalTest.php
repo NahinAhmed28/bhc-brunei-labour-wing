@@ -64,12 +64,14 @@ class TokenModalTest extends TestCase
         $response->assertSeeText('Submission details');
         $response->assertSeeText('Processing details');
         $response->assertSeeText('Applicants');
-        $response->assertSeeText('Desk history');
+        $response->assertSeeText('File transfer history');
         $response->assertSeeText('Documents');
         $response->assertSeeText('Official attachments');
         $response->assertSeeText('Confirmation Letter');
         $response->assertSeeText('Demand Letter');
         $response->assertSeeText('Record information');
+        $response->assertDontSeeText('Amount');
+        $response->assertDontSeeText('Receipt number');
         $response->assertSee('action="'.route('tokens.documents.store', $token).'"', false);
         $response->assertSee('src="'.route('documents.preview', $confirmationLetter).'"', false);
         $response->assertSee('src="'.route('documents.preview', $demandLetter).'"', false);

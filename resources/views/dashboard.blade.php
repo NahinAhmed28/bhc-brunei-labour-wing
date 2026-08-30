@@ -34,21 +34,21 @@
     <div class="row g-4">
         <div class="col-xl-7">
             <div class="card">
-                <div class="card-header bg-white py-3"><h2 class="section-title mb-0">File count by desk</h2></div>
+                <div class="card-header bg-white py-3"><h2 class="section-title mb-0">File count by user</h2></div>
                 <div class="card-body">
-                    @forelse($deskCounts as $desk)
+                    @forelse($holderCounts as $holder)
                         <div class="d-flex align-items-center gap-3 mb-3">
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between small mb-1">
-                                    <span>{{ $desk->name }}</span><strong>{{ $desk->tokens_count }}</strong>
+                                    <a class="text-decoration-none" href="{{ route('tokens.index', ['holder_id' => $holder->id]) }}">{{ $holder->name }}</a><strong>{{ $holder->held_tokens_count }}</strong>
                                 </div>
                                 <div class="progress" style="height: 7px">
-                                    <div class="progress-bar bg-success" style="width: {{ min(100, $desk->tokens_count * 10) }}%"></div>
+                                    <div class="progress-bar bg-success" style="width: {{ min(100, $holder->held_tokens_count * 10) }}%"></div>
                                 </div>
                             </div>
                         </div>
                     @empty
-                        <p class="text-secondary mb-0">Add desks in Configuration to begin tracking movement.</p>
+                        <p class="text-secondary mb-0">Create active users to begin assigning files.</p>
                     @endforelse
                 </div>
             </div>

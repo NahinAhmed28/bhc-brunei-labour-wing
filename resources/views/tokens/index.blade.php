@@ -144,11 +144,11 @@
             </div>
 
             <div>
-                <label class="form-label" for="desk-filter">Desk</label>
-                <select class="form-select" id="desk-filter" name="desk_id">
-                    <option value="">All desks</option>
-                    @foreach($desks as $d)
-                        <option value="{{ $d->id }}" @selected(request('desk_id') == $d->id)>{{ $d->name }}</option>
+                <label class="form-label" for="holder-filter">File Holder</label>
+                <select class="form-select" id="holder-filter" name="holder_id">
+                    <option value="">All users</option>
+                    @foreach($users as $userOption)
+                        <option value="{{ $userOption->id }}" @selected(request('holder_id') == $userOption->id)>{{ $userOption->name }}</option>
                     @endforeach
                 </select>
             </div>
