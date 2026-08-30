@@ -37,7 +37,7 @@ class SearchFilterLayoutTest extends TestCase
     {
         return [
             'tokens' => ['/tokens', 'filter-grid', ['q', 'company_name', 'agency_name', 'category_id', 'holder_id', 'boesl_status', 'bhc_status', 'created', 'pre_selected']],
-            'applicants' => ['/applicants', 'filter-grid', ['q', 'visa_status', 'flight_status', 'insurance_status', 'ic_status']],
+            'workers' => ['/workers', 'filter-grid', ['q', 'visa_status', 'flight_status', 'insurance_status', 'ic_status']],
             'companies' => ['/companies', 'filter-grid filter-grid-compact', ['q']],
             'agencies' => ['/agencies', 'filter-grid filter-grid-compact', ['q']],
             'audit' => ['/audit', 'filter-grid filter-grid-compact', ['q']],

@@ -25,7 +25,7 @@ class TokenSeeder extends Seeder
 
         TokenCategory::upsert([
             ['name' => 'Demand Letter Submission', 'code' => 'DLS', 'is_active' => true, 'display_order' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Change Pre Applicant', 'code' => 'CPA', 'is_active' => true, 'display_order' => 2, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Change Pre Worker', 'code' => 'CPA', 'is_active' => true, 'display_order' => 2, 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Visa Attestation', 'code' => 'VA', 'is_active' => true, 'display_order' => 3, 'created_at' => now(), 'updated_at' => now()],
         ], ['code'], ['name', 'is_active', 'display_order', 'updated_at']);
 

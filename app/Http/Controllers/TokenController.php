@@ -20,7 +20,7 @@ class TokenController extends Controller
 {
     public function index(Request $r)
     {
-        $tokens = Token::with(['company', 'agency', 'category', 'currentHolder.role'])->withCount('applicants')->when($r->q, function ($q, $v) {
+        $tokens = Token::with(['company', 'agency', 'category', 'currentHolder.role'])->withCount('workers')->when($r->q, function ($q, $v) {
             $q->where(function ($s) use ($v) {
                 $s->where('token_number', 'like', "%$v%")->orWhere('bhc_number', 'like', "%$v%")->orWhereHas('company', fn ($x) => $x->where('name', 'like', "%$v%"))->orWhereHas('agency', fn ($x) => $x->where('name', 'like', "%$v%"));
             });
@@ -85,7 +85,7 @@ class TokenController extends Controller
 
     public function show(Token $token)
     {
-        $token->load(['company', 'agency', 'category', 'currentHolder.role', 'creator', 'applicants', 'transferHistories.previousHolder', 'transferHistories.newHolder', 'transferHistories.transferredBy', 'documents']);
+        $token->load(['company', 'agency', 'category', 'currentHolder.role', 'creator', 'workers', 'transferHistories.previousHolder', 'transferHistories.newHolder', 'transferHistories.transferredBy', 'documents']);
 
         return view('tokens.show', compact('token'));
     }
@@ -99,12 +99,12 @@ class TokenController extends Controller
             'currentHolder.role',
             'creator',
             'updater',
-            'applicants',
+            'workers',
             'transferHistories.previousHolder',
             'transferHistories.newHolder',
             'transferHistories.transferredBy',
             'documents' => fn ($query) => $query
-                ->whereNull('applicant_id')
+                ->whereNull('worker_id')
                 ->whereIn('type', ['confirmation-letter', 'demand-letter'])
                 ->orderByDesc('version')
                 ->orderByDesc('id'),
@@ -115,22 +115,22 @@ class TokenController extends Controller
         return view('tokens.modal', compact('token', 'tokenDocuments'));
     }
 
-    public function applicantsModal(Token $token): View
+    public function workersModal(Token $token): View
     {
         $token->load([
             'company',
             'agency',
-            'applicants' => fn ($query) => $query->orderBy('full_name'),
+            'workers' => fn ($query) => $query->orderBy('full_name'),
         ]);
 
-        return view('tokens.applicants-modal', compact('token'));
+        return view('tokens.workers-modal', compact('token'));
     }
 
     public function edit(Token $token)
     {
         $token->load(['transferHistories.previousHolder', 'transferHistories.newHolder', 'transferHistories.transferredBy']);
         $tokenDocuments = $token->documents()
-            ->whereNull('applicant_id')
+            ->whereNull('worker_id')
             ->whereIn('type', ['confirmation-letter', 'demand-letter'])
             ->orderByDesc('version')
             ->orderByDesc('id')
@@ -194,9 +194,9 @@ class TokenController extends Controller
     public function pdf(Token $token)
     {
         $token->load(['company', 'agency', 'category', 'currentHolder']);
-        AuditService::record('download-pdf', 'tokens', $token);
+        AuditService::record('view-pdf', 'tokens', $token);
 
-        return Pdf::loadView('pdf.token', compact('token'))->setPaper('a4')->download($token->token_number.'.pdf');
+        return Pdf::loadView('pdf.token', compact('token'))->setPaper('a4')->stream($token->token_number.'.pdf');
     }
 
     public function cancel(Request $r, Token $token)

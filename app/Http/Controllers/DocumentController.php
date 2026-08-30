@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTokenDocumentRequest;
-use App\Models\Applicant;
 use App\Models\Document;
 use App\Models\Token;
+use App\Models\Worker;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,13 +14,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
-    public function store(Request $r, Applicant $applicant)
+    public function store(Request $r, Worker $worker)
     {
         $data = $r->validate(['type' => 'required|in:passport,demand-letter,visa,contract,medical,insurance,flight-ticket,other', 'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240']);
         $file = $r->file('file');
-        $version = (Document::where('applicant_id', $applicant->id)->where('type', $data['type'])->max('version') ?? 0) + 1;
-        $path = $file->store('documents/'.$applicant->id, 'local');
-        $doc = Document::create(['applicant_id' => $applicant->id, 'token_id' => $applicant->token_id, 'type' => $data['type'], 'version' => $version, 'original_name' => $file->getClientOriginalName(), 'path' => $path, 'mime_type' => $file->getMimeType(), 'size' => $file->getSize(), 'uploaded_by' => $r->user()->id]);
+        $version = (Document::where('worker_id', $worker->id)->where('type', $data['type'])->max('version') ?? 0) + 1;
+        $path = $file->store('documents/'.$worker->id, 'local');
+        $doc = Document::create(['worker_id' => $worker->id, 'token_id' => $worker->token_id, 'type' => $data['type'], 'version' => $version, 'original_name' => $file->getClientOriginalName(), 'path' => $path, 'mime_type' => $file->getMimeType(), 'size' => $file->getSize(), 'uploaded_by' => $r->user()->id]);
         AuditService::record('upload-document', 'documents', $doc);
 
         return back()->with('success', 'Document uploaded as version '.$version.'.');
@@ -31,7 +31,7 @@ class DocumentController extends Controller
         $data = $request->validated();
         $file = $request->file('file');
         $version = (Document::where('token_id', $token->id)
-            ->whereNull('applicant_id')
+            ->whereNull('worker_id')
             ->where('type', $data['type'])
             ->max('version') ?? 0) + 1;
         $path = $file->store('documents/tokens/'.$token->id, 'local');

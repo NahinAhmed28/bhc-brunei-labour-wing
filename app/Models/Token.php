@@ -58,9 +58,9 @@ class Token extends Model
         return $this->belongsTo(User::class, 'current_holder_id');
     }
 
-    public function applicants()
+    public function workers()
     {
-        return $this->hasMany(Applicant::class);
+        return $this->hasMany(Worker::class);
     }
 
     public function deskHistories()

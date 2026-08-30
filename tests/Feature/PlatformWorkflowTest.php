@@ -3,12 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Agency;
-use App\Models\Applicant;
 use App\Models\Company;
 use App\Models\Role;
 use App\Models\Token;
 use App\Models\TokenCategory;
 use App\Models\User;
+use App\Models\Worker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -90,14 +90,14 @@ class PlatformWorkflowTest extends TestCase
         $this->assertSame($originalName, $agency->fresh()->name);
     }
 
-    public function test_applicant_limit_is_enforced(): void
+    public function test_worker_limit_is_enforced(): void
     {
         $role = Role::where('name', 'administrator')->first();
         $user = User::factory()->create(['role_id' => $role->id]);
         $token = Token::first();
         $token->update(['approved_workers' => 1]);
-        Applicant::where('token_id', $token->id)->delete();
-        Applicant::create(['token_id' => $token->id, 'full_name' => 'First Worker', 'passport_number' => 'A1000001', 'nationality' => 'Bangladeshi', 'tracking_status' => 'pending', 'visa_status' => 'pending', 'flight_status' => 'pending', 'insurance_status' => 'pending', 'ic_status' => 'pending', 'medical_status' => 'pending', 'boesl_status' => 'pending', 'created_by' => $user->id]);
-        $this->actingAs($user)->post('/applicants', ['token_id' => $token->id, 'full_name' => 'Second Worker', 'passport_number' => 'A1000002', 'nationality' => 'Bangladeshi', 'tracking_status' => 'pending', 'visa_status' => 'pending', 'flight_status' => 'pending', 'insurance_status' => 'pending', 'ic_status' => 'pending', 'medical_status' => 'pending', 'boesl_status' => 'pending'])->assertSessionHasErrors('token_id');
+        Worker::where('token_id', $token->id)->delete();
+        Worker::create(['token_id' => $token->id, 'full_name' => 'First Worker', 'passport_number' => 'A1000001', 'nationality' => 'Bangladeshi', 'tracking_status' => 'pending', 'visa_status' => 'pending', 'flight_status' => 'pending', 'insurance_status' => 'pending', 'ic_status' => 'pending', 'medical_status' => 'pending', 'boesl_status' => 'pending', 'created_by' => $user->id]);
+        $this->actingAs($user)->post('/workers', ['token_id' => $token->id, 'full_name' => 'Second Worker', 'passport_number' => 'A1000002', 'nationality' => 'Bangladeshi', 'tracking_status' => 'pending', 'visa_status' => 'pending', 'flight_status' => 'pending', 'insurance_status' => 'pending', 'ic_status' => 'pending', 'medical_status' => 'pending', 'boesl_status' => 'pending'])->assertSessionHasErrors('token_id');
     }
 }

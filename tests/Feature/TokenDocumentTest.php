@@ -39,7 +39,7 @@ class TokenDocumentTest extends TestCase
         $this->assertDatabaseHas('documents', [
             'id' => $document->id,
             'token_id' => $token->id,
-            'applicant_id' => null,
+            'worker_id' => null,
             'type' => $type,
             'version' => 1,
             'original_name' => $filename,

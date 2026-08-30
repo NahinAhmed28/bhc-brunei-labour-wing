@@ -109,7 +109,7 @@
                         <input type="hidden" name="pre_selected" value="0">
                         <input class="form-check-input" type="checkbox" name="pre_selected" value="1"
                                id="pre" @checked(old('pre_selected', $token->pre_selected))>
-                        <label class="form-check-label" for="pre">Pre Selected Applicant</label>
+                        <label class="form-check-label" for="pre">Pre Selected Worker</label>
                     </div>
                 </div>
 

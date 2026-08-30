@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AgencyController;
-use App\Http\Controllers\ApplicantController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanyController;
@@ -11,6 +10,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WorkerController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -27,7 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/configuration/desks', [ConfigurationController::class, 'desk'])->name('configuration.desks')->middleware('role:super-admin');
     Route::resource('tokens', TokenController::class)->only('index');
     Route::get('/tokens/{token}/modal', [TokenController::class, 'modal'])->name('tokens.modal');
-    Route::get('/tokens/{token}/applicants/modal', [TokenController::class, 'applicantsModal'])->name('tokens.applicants.modal');
+    Route::get('/tokens/{token}/workers/modal', [TokenController::class, 'workersModal'])->name('tokens.workers.modal');
     Route::get('/tokens/{token}/pdf', [TokenController::class, 'pdf'])->name('tokens.pdf');
     Route::middleware('role:super-admin,administrator')->group(function () {
         Route::resource('tokens', TokenController::class)->only('create', 'store', 'edit', 'update');
@@ -35,18 +35,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/tokens/{token}/documents', [DocumentController::class, 'storeToken'])->name('tokens.documents.store');
     });
     Route::resource('tokens', TokenController::class)->only('show');
-    Route::resource('applicants', ApplicantController::class)->only('index');
+    Route::resource('workers', WorkerController::class)->only('index');
     Route::middleware('role:super-admin,administrator,data-entry')->group(function () {
-        Route::resource('applicants', ApplicantController::class)->only('create', 'store', 'edit', 'update');
-        Route::post('/applicants/{applicant}/documents', [DocumentController::class, 'store'])->name('documents.store');
+        Route::resource('workers', WorkerController::class)->only('create', 'store', 'edit', 'update');
+        Route::post('/workers/{worker}/documents', [DocumentController::class, 'store'])->name('documents.store');
     });
-    Route::resource('applicants', ApplicantController::class)->only('show');
-    Route::get('/applicants/{applicant}/letters/{type}', [ApplicantController::class, 'letter'])->name('applicants.letter');
+    Route::resource('workers', WorkerController::class)->only('show');
+    Route::get('/workers/{worker}/letters/{type}', [WorkerController::class, 'letter'])->name('workers.letter');
     Route::get('/documents/{document}', [DocumentController::class, 'download'])->name('documents.download');
     Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])->name('documents.preview');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/tokens/{format}', [ReportController::class, 'tokens'])->whereIn('format', ['pdf', 'excel'])->name('reports.tokens');
-    Route::get('/reports/applicants/{format}', [ReportController::class, 'applicants'])->whereIn('format', ['pdf', 'excel'])->name('reports.applicants');
+    Route::get('/reports/workers/{format}', [ReportController::class, 'workers'])->whereIn('format', ['pdf', 'excel'])->name('reports.workers');
     Route::get('/audit', [AuditController::class, 'index'])->name('audit.index')->middleware('role:super-admin,viewer');
     Route::resource('users', UserController::class)->except('show', 'destroy')->middleware('role:super-admin');
 });

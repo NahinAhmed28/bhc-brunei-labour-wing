@@ -309,6 +309,39 @@ class TokenControllerTest extends TestCase
         $response->assertDontSee('name="receipt_number"', false);
     }
 
+    public function test_token_details_open_the_pdf_in_a_new_tab(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $token = $this->createToken($administrator, $company, $agency, $category);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.show', $token));
+
+        $response->assertSee(
+            'href="'.route('tokens.pdf', $token).'" target="_blank" rel="noopener"',
+            false,
+        );
+        $response->assertSeeText('View PDF');
+        $response->assertDontSeeText('Download PDF');
+    }
+
+    public function test_token_pdf_is_displayed_inline_instead_of_downloaded(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $token = $this->createToken($administrator, $company, $agency, $category);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.pdf', $token));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringContainsString('inline', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString($token->token_number.'.pdf', (string) $response->headers->get('content-disposition'));
+        $this->assertDatabaseHas('audit_logs', [
+            'module' => 'tokens',
+            'record_id' => (string) $token->id,
+            'action' => 'view-pdf',
+        ]);
+    }
+
     /**
      * @return array{User, Company, Agency, TokenCategory}
      */
@@ -321,5 +354,23 @@ class TokenControllerTest extends TestCase
         $category = TokenCategory::create(['name' => 'Demand Letter', 'code' => 'DL']);
 
         return [$administrator, $company, $agency, $category];
+    }
+
+    private function createToken(User $user, Company $company, Agency $agency, TokenCategory $category): Token
+    {
+        return Token::create([
+            'token_number' => 'BHC-2608-00001',
+            'token_category_id' => $category->id,
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 60,
+            'approved_workers' => 40,
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
     }
 }

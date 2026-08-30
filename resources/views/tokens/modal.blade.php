@@ -27,7 +27,7 @@
                         ['Received on', $token->received_on->format('d M Y')],
                         ['Demanded workers', number_format($token->demanded_workers)],
                         ['Approved workers', number_format($token->approved_workers)],
-                        ['Pre selected applicant', $token->pre_selected ? 'Yes' : 'No'],
+                        ['Pre selected worker', $token->pre_selected ? 'Yes' : 'No'],
                         ['BHC number', $token->bhc_number ?: 'Pending'],
                     ] as [$label, $value])
                         <div>
@@ -65,13 +65,13 @@
 
             <section class="token-modal-section">
                 <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-                    <h3 class="token-modal-section-title mb-0">Applicants</h3>
-                    <span class="token-modal-count">{{ $token->applicants->count() }}</span>
+                    <h3 class="token-modal-section-title mb-0">Workers</h3>
+                    <span class="token-modal-count">{{ $token->workers->count() }}</span>
                 </div>
-                <p class="text-secondary">View the applicant roster connected to this token.</p>
+                <p class="text-secondary">View the worker roster connected to this token.</p>
                 <button class="btn btn-sm btn-light" type="button"
-                    data-token-modal-url="{{ route('tokens.applicants.modal', $token) }}">
-                    <i class="bi bi-people me-1" aria-hidden="true"></i>View applicants
+                    data-token-modal-url="{{ route('tokens.workers.modal', $token) }}">
+                    <i class="bi bi-people me-1" aria-hidden="true"></i>View workers
                 </button>
             </section>
 

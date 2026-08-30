@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ApplicantStatusHistory extends Model
+class WorkerStatusHistory extends Model
 {
     protected $guarded = [];
 

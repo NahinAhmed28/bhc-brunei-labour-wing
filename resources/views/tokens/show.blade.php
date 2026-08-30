@@ -11,7 +11,7 @@
             <p class="page-lead mb-0">{{ $token->company->name }} &middot; {{ $token->agency->name }}</p>
         </div>
         <div class="d-flex gap-2">
-            <a class="btn btn-outline-primary" href="{{ route('tokens.pdf', $token) }}"><i class="bi bi-file-pdf me-2"></i>Download PDF</a>
+            <a class="btn btn-outline-primary" href="{{ route('tokens.pdf', $token) }}" target="_blank" rel="noopener"><i class="bi bi-file-pdf me-2"></i>View PDF</a>
             @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
                 <a class="btn btn-primary" href="{{ route('tokens.edit', $token) }}">Edit</a>
             @endif
@@ -52,19 +52,19 @@
 
             <div class="card">
                 <div class="card-header bg-white p-4 d-flex justify-content-between align-items-center">
-                    <div><h2 class="section-title mb-0">Attached applicants</h2><small class="text-secondary">{{ $token->applicants->count() }} of {{ $token->approved_workers ?: $token->demanded_workers }} permitted</small></div>
+                    <div><h2 class="section-title mb-0">Attached workers</h2><small class="text-secondary">{{ $token->workers->count() }} of {{ $token->approved_workers ?: $token->demanded_workers }} permitted</small></div>
                     @if(auth()->user()->hasAnyRole('super-admin', 'administrator', 'data-entry'))
-                        <a class="btn btn-sm btn-primary" href="{{ route('applicants.create', ['token_id' => $token->id]) }}">Add applicant</a>
+                        <a class="btn btn-sm btn-primary" href="{{ route('workers.create', ['token_id' => $token->id]) }}">Add worker</a>
                     @endif
                 </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
-                        <thead><tr><th class="ps-4">Applicant</th><th>Passport</th><th>Registration</th><th>Visa</th><th class="pe-4">Action</th></tr></thead>
+                        <thead><tr><th class="ps-4">Worker</th><th>Passport</th><th>Registration</th><th>Visa</th><th class="pe-4">Action</th></tr></thead>
                         <tbody>
-                            @forelse($token->applicants as $applicant)
-                                <tr><td class="ps-4"><strong>{{ $applicant->full_name }}</strong></td><td>{{ $applicant->passport_number }}</td><td>{{ $applicant->registration_number ?: '—' }}</td><td><span class="status">{{ ucfirst($applicant->visa_status) }}</span></td><td class="pe-4"><a class="btn btn-sm btn-light" href="{{ route('applicants.show', $applicant) }}">View</a></td></tr>
+                            @forelse($token->workers as $worker)
+                                <tr><td class="ps-4"><strong>{{ $worker->full_name }}</strong></td><td>{{ $worker->passport_number }}</td><td>{{ $worker->registration_number ?: '—' }}</td><td><span class="status">{{ ucfirst($worker->visa_status) }}</span></td><td class="pe-4"><a class="btn btn-sm btn-light" href="{{ route('workers.show', $worker) }}">View</a></td></tr>
                             @empty
-                                <tr><td colspan="5" class="text-center text-secondary py-4">No applicants linked yet.</td></tr>
+                                <tr><td colspan="5" class="text-center text-secondary py-4">No workers linked yet.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

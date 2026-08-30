@@ -240,7 +240,7 @@
                             data-token-modal-url="{{ route('tokens.modal', $token) }}">
                             {{ $token->token_number }}
                         </button>
-                        <div class="small text-secondary">{{ $token->applicants_count }} applicants</div>
+                        <div class="small text-secondary">{{ $token->workers_count }} workers</div>
                         @if($token->pre_selected)
                             <span class="badge bg-info-subtle text-info-emphasis" style="font-size:.68rem">Pre-selected</span>
                         @endif
@@ -267,9 +267,9 @@
 
                     <td class="col-hide-md">
                         <div>{{ $token->approved_workers ?? '—' }}</div>
-                        <button class="btn btn-sm btn-light mt-1 token-applicants-button" type="button"
-                            data-token-modal-url="{{ route('tokens.applicants.modal', $token) }}">
-                            <i class="bi bi-people me-1" aria-hidden="true"></i>Applicants ({{ $token->applicants_count }})
+                        <button class="btn btn-sm btn-light mt-1 token-workers-button" type="button"
+                            data-token-modal-url="{{ route('tokens.workers.modal', $token) }}">
+                            <i class="bi bi-people me-1" aria-hidden="true"></i>Workers ({{ $token->workers_count }})
                         </button>
                     </td>
 
@@ -364,15 +364,15 @@
                     </div>
                     @endif
                     <div class="token-card-row">
-                        <dt>Applicants</dt>
-                        <dd>{{ $token->applicants_count }}</dd>
+                        <dt>Workers</dt>
+                        <dd>{{ $token->workers_count }}</dd>
                     </div>
                 </dl>
 
                 <div class="token-card-actions">
                     <button class="btn btn-sm btn-light w-100" type="button"
-                        data-token-modal-url="{{ route('tokens.applicants.modal', $token) }}">
-                        <i class="bi bi-people me-1"></i>Applicants ({{ $token->applicants_count }})
+                        data-token-modal-url="{{ route('tokens.workers.modal', $token) }}">
+                        <i class="bi bi-people me-1"></i>Workers ({{ $token->workers_count }})
                     </button>
                     <button class="btn btn-sm btn-light w-100" type="button"
                         data-token-modal-url="{{ route('tokens.modal', $token) }}">

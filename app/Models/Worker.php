@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Applicant extends Model
+class Worker extends Model
 {
     use SoftDeletes;
 
@@ -23,7 +23,7 @@ class Applicant extends Model
 
     public function statusHistories()
     {
-        return $this->hasMany(ApplicantStatusHistory::class)->latest();
+        return $this->hasMany(WorkerStatusHistory::class)->latest();
     }
 
     public function documents()

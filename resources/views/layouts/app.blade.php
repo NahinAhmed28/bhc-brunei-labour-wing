@@ -22,48 +22,79 @@
     <aside class="sidebar" id="primary-sidebar">
         <div class="brand">
             <div class="brand-mark">BD</div>
-            <div>
+            <div class="brand-copy">
+                <div class="brand-kicker">Labour Wing</div>
                 <div class="brand-title">Bangladesh High Commission</div>
                 <div class="brand-sub">Brunei Darussalam</div>
             </div>
         </div>
-        <div class="nav-section">Operations</div>
-        <nav class="nav flex-column">
-            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                <i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard
-            </a>
-            <a class="nav-link {{ request()->routeIs('tokens.*') ? 'active' : '' }}" href="{{ route('tokens.index') }}">
-                <i class="bi bi-ticket-detailed" aria-hidden="true"></i> Tokens
-            </a>
-            <a class="nav-link {{ request()->routeIs('applicants.*') ? 'active' : '' }}" href="{{ route('applicants.index') }}">
-                <i class="bi bi-passport" aria-hidden="true"></i> Applicants
-            </a>
-            <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
-                <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Reports
-            </a>
-            <div class="nav-section">Management</div>
-            @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
-                <a class="nav-link {{ request()->routeIs('companies.*') ? 'active' : '' }}" href="{{ route('companies.index') }}">
-                    <i class="bi bi-buildings" aria-hidden="true"></i> Companies
-                </a>
-                <a class="nav-link {{ request()->routeIs('agencies.*') ? 'active' : '' }}" href="{{ route('agencies.index') }}">
-                    <i class="bi bi-briefcase" aria-hidden="true"></i> Agencies
-                </a>
-            @endif
-            @if(auth()->user()->isSuperAdmin())
-                <a class="nav-link {{ request()->routeIs('configuration') ? 'active' : '' }}" href="{{ route('configuration') }}">
-                    <i class="bi bi-sliders" aria-hidden="true"></i> Configuration
-                </a>
-                <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
-                    <i class="bi bi-people" aria-hidden="true"></i> Users
-                </a>
-            @endif
-            @if(auth()->user()->hasAnyRole('super-admin', 'viewer'))
-                <a class="nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}" href="{{ route('audit.index') }}">
-                    <i class="bi bi-shield-check" aria-hidden="true"></i> Audit trail
-                </a>
+        <nav class="sidebar-navigation" aria-label="Primary navigation">
+            <section class="nav-sector" aria-labelledby="operations-sector">
+                <div class="nav-sector-heading" id="operations-sector">
+                    <span class="nav-sector-icon"><i class="bi bi-grid-1x2" aria-hidden="true"></i></span>
+                    <span><strong>Operations</strong><small>Daily workflow</small></span>
+                </div>
+                <div class="nav-sector-links">
+                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        <span class="nav-link-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Dashboard</strong><small>Mission overview</small></span>
+                    </a>
+                    <a class="nav-link {{ request()->routeIs('tokens.*') ? 'active' : '' }}" href="{{ route('tokens.index') }}">
+                        <span class="nav-link-icon"><i class="bi bi-ticket-detailed" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Tokens</strong><small>Submission registry</small></span>
+                    </a>
+                    <a class="nav-link {{ request()->routeIs('workers.*') ? 'active' : '' }}" href="{{ route('workers.index') }}">
+                        <span class="nav-link-icon"><i class="bi bi-passport" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Workers</strong><small>Movement records</small></span>
+                    </a>
+                    <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
+                        <span class="nav-link-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Reports</strong><small>Operational exports</small></span>
+                    </a>
+                </div>
+            </section>
+
+            @if(auth()->user()->hasAnyRole('super-admin', 'administrator', 'viewer'))
+            <section class="nav-sector" aria-labelledby="management-sector">
+                <div class="nav-sector-heading" id="management-sector">
+                    <span class="nav-sector-icon"><i class="bi bi-gear-wide-connected" aria-hidden="true"></i></span>
+                    <span><strong>Management</strong><small>Records and access</small></span>
+                </div>
+                <div class="nav-sector-links">
+                @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
+                    <a class="nav-link {{ request()->routeIs('companies.*') ? 'active' : '' }}" href="{{ route('companies.index') }}">
+                        <span class="nav-link-icon"><i class="bi bi-buildings" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Companies</strong><small>Employer directory</small></span>
+                    </a>
+                    <a class="nav-link {{ request()->routeIs('agencies.*') ? 'active' : '' }}" href="{{ route('agencies.index') }}">
+                        <span class="nav-link-icon"><i class="bi bi-briefcase" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Agencies</strong><small>Recruiter directory</small></span>
+                    </a>
+                @endif
+                @if(auth()->user()->isSuperAdmin())
+                    <a class="nav-link {{ request()->routeIs('configuration') ? 'active' : '' }}" href="{{ route('configuration') }}">
+                        <span class="nav-link-icon"><i class="bi bi-sliders" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Configuration</strong><small>System controls</small></span>
+                    </a>
+                    <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
+                        <span class="nav-link-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Users</strong><small>Access management</small></span>
+                    </a>
+                @endif
+                @if(auth()->user()->hasAnyRole('super-admin', 'viewer'))
+                    <a class="nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}" href="{{ route('audit.index') }}">
+                        <span class="nav-link-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></span>
+                        <span class="nav-link-copy"><strong>Audit trail</strong><small>Recorded activity</small></span>
+                    </a>
+                @endif
+                </div>
+            </section>
             @endif
         </nav>
+        <div class="sidebar-foot">
+            <span class="sidebar-foot-seal"><i class="bi bi-patch-check" aria-hidden="true"></i></span>
+            <span><strong>Official registry</strong><small>Secure mission records</small></span>
+        </div>
     </aside>
     <button class="sidebar-backdrop" type="button" data-sidebar-dismiss aria-label="Close navigation"></button>
     <main class="main">

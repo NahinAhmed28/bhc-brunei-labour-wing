@@ -8,9 +8,9 @@ class Document extends Model
 {
     protected $guarded = [];
 
-    public function applicant()
+    public function worker()
     {
-        return $this->belongsTo(Applicant::class);
+        return $this->belongsTo(Worker::class);
     }
 
     public function token()

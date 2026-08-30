@@ -1,6 +1,6 @@
 # Bangladesh-Brunei Visa & Worker Management System
 
-A Laravel 13 modular-monolith implementation of the Bangladesh High Commission, Brunei Darussalam SRS. It consolidates company and agency master data, token issuance, desk movement, applicant entry, secure document versions, PDF letters, Excel-compatible exports, and immutable audit records.
+A Laravel 13 modular-monolith implementation of the Bangladesh High Commission, Brunei Darussalam SRS. It consolidates company and agency master data, token issuance, desk movement, worker entry, secure document versions, PDF letters, Excel-compatible exports, and immutable audit records.
 
 ## Requirements
 
@@ -33,8 +33,8 @@ npm run assets
 ## Security and storage
 
 - Roles and field-level rules are enforced server-side.
-- Applicant uploads use the private `local` disk and authorized download routes.
+- Worker uploads use the private `local` disk and authorized download routes.
 - Protected token changes, desk movement, document activity, exports, and authentication are audited.
-- Companies, agencies, tokens, and applicants use deactivation or soft deletion patterns to preserve history.
+- Companies, agencies, tokens, and workers use deactivation or soft deletion patterns to preserve history.
 
 Run `php artisan test` before deployment. Configure HTTPS, queue workers, backups, mail, session lifetime, and private storage for the target infrastructure.

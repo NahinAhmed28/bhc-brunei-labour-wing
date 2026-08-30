@@ -3,13 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Agency;
-use App\Models\Applicant;
 use App\Models\Company;
 use App\Models\Document;
 use App\Models\Role;
 use App\Models\Token;
 use App\Models\TokenCategory;
 use App\Models\User;
+use App\Models\Worker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,8 +25,8 @@ class TokenModalTest extends TestCase
 
         $response->assertSee('class="token-row"', false);
         $response->assertSee('data-token-modal-url="'.route('tokens.modal', $token).'"', false);
-        $response->assertSee('data-token-modal-url="'.route('tokens.applicants.modal', $token).'"', false);
-        $response->assertSee('token-applicants-button', false);
+        $response->assertSee('data-token-modal-url="'.route('tokens.workers.modal', $token).'"', false);
+        $response->assertSee('token-workers-button', false);
         $response->assertSee('aria-controls="tokenDetailsModal"', false);
         $response->assertSee('href="'.route('tokens.edit', $token).'"', false);
         $response->assertDontSee('href="'.route('tokens.show', $token).'"', false);
@@ -63,7 +63,7 @@ class TokenModalTest extends TestCase
         $response->assertSeeText('Brunei Harbour Services');
         $response->assertSeeText('Submission details');
         $response->assertSeeText('Processing details');
-        $response->assertSeeText('Applicants');
+        $response->assertSeeText('Workers');
         $response->assertSeeText('File transfer history');
         $response->assertSeeText('Documents');
         $response->assertSeeText('Official attachments');
@@ -78,10 +78,10 @@ class TokenModalTest extends TestCase
         $response->assertDontSeeText('PDF preview');
     }
 
-    public function test_applicant_roster_modal_links_applicant_names_to_their_details(): void
+    public function test_worker_roster_modal_links_worker_names_to_their_details(): void
     {
         [$administrator, $token] = $this->createToken();
-        $applicant = Applicant::create([
+        $worker = Worker::create([
             'token_id' => $token->id,
             'full_name' => 'Nur Rahman',
             'passport_number' => 'BA0123456',
@@ -90,13 +90,13 @@ class TokenModalTest extends TestCase
             'updated_by' => $administrator->id,
         ]);
 
-        $response = $this->actingAs($administrator)->get(route('tokens.applicants.modal', $token));
+        $response = $this->actingAs($administrator)->get(route('tokens.workers.modal', $token));
 
         $response->assertOk();
-        $response->assertSeeText('Applicant roster');
+        $response->assertSeeText('Worker roster');
         $response->assertSeeText($token->token_number);
-        $response->assertSeeText($applicant->full_name);
-        $response->assertSee('href="'.route('applicants.show', $applicant).'"', false);
+        $response->assertSeeText($worker->full_name);
+        $response->assertSee('href="'.route('workers.show', $worker).'"', false);
     }
 
     /**

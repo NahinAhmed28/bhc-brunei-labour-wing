@@ -27,11 +27,16 @@ class DashboardNavigationTest extends TestCase
         $response->assertSee('href="'.route('tokens.index', ['created' => 'today']).'"', false);
         $response->assertSee('href="'.route('tokens.index', ['bhc_status' => 'pending']).'"', false);
         $response->assertSee('href="'.route('tokens.index', ['boesl_status' => 'pending']).'"', false);
-        $response->assertSee('href="'.route('applicants.index', ['flight_status' => 'pending']).'"', false);
+        $response->assertSee('href="'.route('workers.index', ['flight_status' => 'pending']).'"', false);
         $response->assertSee('href="'.route('tokens.index').'"', false);
-        $response->assertSee('href="'.route('applicants.index').'"', false);
-        $response->assertSee('bi-passport" aria-hidden="true"></i> Applicants', false);
-        $response->assertDontSee('bi-passport" aria-hidden="true"></i> Applications', false);
+        $response->assertSee('href="'.route('workers.index').'"', false);
+        $response->assertSeeText('Workers');
+        $response->assertDontSeeText('Applications');
+        $response->assertSee('class="sidebar-navigation"', false);
+        $response->assertSee('class="nav-sector"', false);
+        $response->assertSeeText('Daily workflow');
+        $response->assertSeeText('Records and access');
+        $response->assertSeeText('Official registry');
         $response->assertSee('class="btn sidebar-toggle"', false);
         $response->assertSee('aria-controls="primary-sidebar"', false);
         $response->assertSee('data-sidebar-dismiss', false);
@@ -66,5 +71,17 @@ class DashboardNavigationTest extends TestCase
         $response->assertOk();
         $response->assertSee('Assigned Holder');
         $response->assertDontSee('Idle Holder');
+    }
+
+    public function test_data_entry_navigation_omits_the_empty_management_sector(): void
+    {
+        $role = Role::create(['name' => 'data-entry', 'label' => 'Data Entry Operator']);
+        $dataEntryUser = User::factory()->create(['role_id' => $role->id]);
+
+        $response = $this->actingAs($dataEntryUser)->get(route('dashboard'));
+
+        $response->assertSee('id="operations-sector"', false);
+        $response->assertDontSee('id="management-sector"', false);
+        $response->assertSeeText('Daily workflow');
     }
 }

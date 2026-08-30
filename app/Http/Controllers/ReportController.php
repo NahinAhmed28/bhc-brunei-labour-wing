@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Applicant;
 use App\Models\Token;
+use App\Models\Worker;
 use App\Services\AuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -25,14 +25,14 @@ class ReportController extends Controller
         return response()->view('exports.tokens', compact('tokens'), 200, ['Content-Type' => 'application/vnd.ms-excel', 'Content-Disposition' => 'attachment; filename="token-register.xls"']);
     }
 
-    public function applicants(string $format)
+    public function workers(string $format)
     {
-        $applicants = Applicant::with('token.company', 'token.agency')->latest()->get();
-        AuditService::record('export', 'reports', 'applicant-register', [], ['format' => $format]);
+        $workers = Worker::with('token.company', 'token.agency')->latest()->get();
+        AuditService::record('export', 'reports', 'worker-register', [], ['format' => $format]);
         if ($format === 'pdf') {
-            return Pdf::loadView('pdf.applicant-register', compact('applicants'))->setPaper('a4', 'landscape')->download('applicant-register.pdf');
+            return Pdf::loadView('pdf.worker-register', compact('workers'))->setPaper('a4', 'landscape')->download('worker-register.pdf');
         }
 
-        return response()->view('exports.applicants', compact('applicants'), 200, ['Content-Type' => 'application/vnd.ms-excel', 'Content-Disposition' => 'attachment; filename="applicant-register.xls"']);
+        return response()->view('exports.workers', compact('workers'), 200, ['Content-Type' => 'application/vnd.ms-excel', 'Content-Disposition' => 'attachment; filename="worker-register.xls"']);
     }
 }

@@ -3,42 +3,42 @@
 namespace Tests\Feature;
 
 use App\Models\Agency;
-use App\Models\Applicant;
 use App\Models\Company;
 use App\Models\Role;
 use App\Models\Token;
 use App\Models\TokenCategory;
 use App\Models\User;
+use App\Models\Worker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ApplicantRoutingTest extends TestCase
+class WorkerRoutingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_administrator_can_open_the_applicant_create_page(): void
+    public function test_administrator_can_open_the_worker_create_page(): void
     {
         $role = Role::create(['name' => 'administrator', 'label' => 'Administrator']);
         $administrator = User::factory()->create(['role_id' => $role->id]);
         $token = $this->createToken($administrator);
 
-        $response = $this->actingAs($administrator)->get(route('applicants.create', ['token_id' => $token->id]));
+        $response = $this->actingAs($administrator)->get(route('workers.create', ['token_id' => $token->id]));
 
         $response->assertOk();
-        $response->assertSeeText('Add applicant against token');
-        $response->assertSee('action="'.route('applicants.store').'"', false);
+        $response->assertSeeText('Add worker against token');
+        $response->assertSee('action="'.route('workers.store').'"', false);
         $response->assertSee('type="search"', false);
         $response->assertSee('list="token-lookup-options"', false);
         $response->assertSee('value="'.$token->token_number.'"', false);
         $response->assertSee('name="token_id" value="'.$token->id.'"', false);
     }
 
-    public function test_super_administrator_can_type_a_token_number_when_editing_an_applicant(): void
+    public function test_super_administrator_can_type_a_token_number_when_editing_a_worker(): void
     {
         $role = Role::create(['name' => 'super-admin', 'label' => 'Super Administrator']);
         $superAdministrator = User::factory()->create(['role_id' => $role->id]);
         $token = $this->createToken($superAdministrator);
-        $applicant = Applicant::create([
+        $worker = Worker::create([
             'token_id' => $token->id,
             'full_name' => 'Nur Rahman',
             'passport_number' => 'BA0123456',
@@ -46,7 +46,7 @@ class ApplicantRoutingTest extends TestCase
             'updated_by' => $superAdministrator->id,
         ]);
 
-        $response = $this->actingAs($superAdministrator)->get(route('applicants.edit', $applicant));
+        $response = $this->actingAs($superAdministrator)->get(route('workers.edit', $worker));
 
         $response->assertOk();
         $response->assertSee('data-token-lookup', false);
