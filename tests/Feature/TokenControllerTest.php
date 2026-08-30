@@ -25,6 +25,43 @@ class TokenControllerTest extends TestCase
         $response->assertOk();
         $response->assertSeeText('Create Token');
         $response->assertSee('action="'.route('tokens.store').'"', false);
+        $response->assertSee('value="'.$administrator->name.'" disabled', false);
+        $response->assertSeeText('The file is initially assigned to the user creating it.');
+        $response->assertDontSee('name="current_holder_id"', false);
+    }
+
+    public function test_new_token_is_initially_assigned_to_the_user_who_created_it(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $differentHolder = User::factory()->create(['is_active' => true]);
+
+        $response = $this->actingAs($administrator)->post(route('tokens.store'), [
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 60,
+            'approved_workers' => 40,
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+            'current_holder_id' => $differentHolder->id,
+            'received_by' => 'Spoofed Officer',
+        ]);
+
+        $token = Token::query()->sole();
+
+        $response->assertRedirect(route('tokens.show', $token));
+        $this->assertSame($administrator->id, $token->created_by);
+        $this->assertSame($administrator->id, $token->current_holder_id);
+        $this->assertSame($administrator->name, $token->received_by);
+        $this->assertDatabaseHas('token_transfer_histories', [
+            'token_id' => $token->id,
+            'previous_holder_id' => null,
+            'new_holder_id' => $administrator->id,
+            'transferred_by' => $administrator->id,
+            'remarks' => 'Initial file assignment',
+        ]);
     }
 
     public function test_create_does_not_persist_change_reason_as_a_token_attribute(): void

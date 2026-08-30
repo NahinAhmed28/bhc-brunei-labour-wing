@@ -13,12 +13,13 @@
     <link rel="stylesheet" href="{{ asset('assets/css/token-modal.css') }}">
     {{-- Flatpickr date picker (same library as boesel-visa) --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     @stack('styles')
 </head>
 <body>
 <div class="app-shell">
-    <aside class="sidebar">
+    <aside class="sidebar" id="primary-sidebar">
         <div class="brand">
             <div class="brand-mark">BD</div>
             <div>
@@ -64,9 +65,10 @@
             @endif
         </nav>
     </aside>
+    <button class="sidebar-backdrop" type="button" data-sidebar-dismiss aria-label="Close navigation"></button>
     <main class="main">
         <header class="topbar">
-            <button class="btn btn-light d-lg-none" data-sidebar-toggle aria-label="Toggle navigation">
+            <button class="btn sidebar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-controls="primary-sidebar" aria-expanded="true">
                 <i class="bi bi-list" aria-hidden="true"></i>
             </button>
             <div class="d-none d-lg-block text-secondary small">Visa & worker operations registry</div>

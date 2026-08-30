@@ -25,7 +25,7 @@ class DashboardController extends Controller
 
         return view('dashboard', [
             'metrics' => $metrics,
-            'holderCounts' => User::withCount('heldTokens')->where('is_active', true)->orderBy('name')->get(),
+            'holderCounts' => User::withCount('heldTokens')->where('is_active', true)->has('heldTokens')->orderBy('name')->get(),
             'recent' => AuditLog::with('user')->latest()->limit(8)->get(),
         ]);
     }

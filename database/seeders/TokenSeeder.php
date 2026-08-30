@@ -29,25 +29,47 @@ class TokenSeeder extends Seeder
             ['name' => 'Visa Attestation', 'code' => 'VA', 'is_active' => true, 'display_order' => 3, 'created_at' => now(), 'updated_at' => now()],
         ], ['code'], ['name', 'is_active', 'display_order', 'updated_at']);
 
-        $companyIds = Company::pluck('id', 'name')->all();
-        $agencyIds = Agency::pluck('id', 'name')->all();
+        $companyIds = Company::query()
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn (Company $company): array => [strtolower($company->name) => $company->id])
+            ->all();
+        $agencyIds = Agency::query()
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn (Agency $agency): array => [strtolower($agency->name) => $agency->id])
+            ->all();
         $categoryIds = TokenCategory::pluck('id', 'name')->all();
+        $userIds = User::query()
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn (User $user): array => [trim($user->name) => $user->id])
+            ->all();
 
         foreach (array_chunk($this->records(), 100) as $records) {
-            $tokens = array_map(function (array $record) use ($administratorId, $companyIds, $agencyIds, $categoryIds): array {
-                $companyName = $record['company_name'];
-                $agencyName = $record['agency_name'];
+            $tokens = array_map(function (array $record) use ($administratorId, $companyIds, $agencyIds, $categoryIds, $userIds): array {
+                $companyName = $this->normalizeName($record['company_name']);
+                $agencyName = $this->normalizeName($record['agency_name']);
                 $categoryName = $record['category_name'];
                 unset($record['company_name'], $record['agency_name'], $record['category_name']);
 
-                $record['company_id'] = $companyIds[$companyName]
+                $creatorName = trim((string) ($record['received_by'] ?? ''));
+                $holderName = trim((string) ($record['file_status'] ?? ''));
+                $creatorId = $userIds[$creatorName] ?? $administratorId;
+
+                $record['company_id'] = $companyIds[strtolower($companyName)]
                     ?? throw new LogicException("Legacy company [{$companyName}] was not seeded.");
-                $record['agency_id'] = $agencyIds[$agencyName]
+                $record['agency_id'] = $agencyIds[strtolower($agencyName)]
                     ?? throw new LogicException("Legacy agency [{$agencyName}] was not seeded.");
                 $record['token_category_id'] = $categoryIds[$categoryName]
                     ?? throw new LogicException("Legacy token category [{$categoryName}] was not seeded.");
-                $record['created_by'] = $administratorId;
-                $record['updated_by'] = $administratorId;
+                $record['current_holder_id'] = $userIds[$holderName] ?? null;
+                $record['created_by'] = $creatorId;
+                $record['updated_by'] = $creatorId;
+                $record['approved_workers'] = $record['approved_workers'] ?? 0;
+                $record['pre_selected'] = (bool) ($record['pre_selected'] ?? false);
+                $record['site_visit_required'] = (bool) ($record['site_visit_required'] ?? false);
+                $record['required_visa_attestation'] = $record['required_visa_attestation'] ?? $this->requiredVisaAttestationFromRemarks($record['remarks'] ?? null);
+                $record['boesl_status'] = $record['boesl_status'] ? 'submitted' : 'pending';
+                $record['visa_status'] = $record['visa_status'] ?: 'pending';
+                $record['file_status'] = 'active';
                 $record['deleted_at'] = null;
 
                 return $record;
@@ -60,8 +82,10 @@ class TokenSeeder extends Seeder
                     'token_category_id',
                     'company_id',
                     'agency_id',
+                    'current_holder_id',
                     'received_on',
                     'demanded_workers',
+                    'required_visa_attestation',
                     'approved_workers',
                     'pre_selected',
                     'bhc_number',
@@ -74,12 +98,27 @@ class TokenSeeder extends Seeder
                     'visa_status',
                     'file_status',
                     'remarks',
+                    'created_by',
                     'updated_by',
                     'updated_at',
                     'deleted_at',
                 ],
             );
         }
+    }
+
+    private function normalizeName(string $name): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', str_replace('-', '', $name)));
+    }
+
+    private function requiredVisaAttestationFromRemarks(?string $remarks): ?int
+    {
+        if ($remarks === null || preg_match('/Legacy required visa attestations: (\d+)\./', $remarks, $matches) !== 1) {
+            return null;
+        }
+
+        return (int) $matches[1];
     }
 
     /**

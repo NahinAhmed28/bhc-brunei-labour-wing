@@ -20,7 +20,7 @@ class AgencySeeder extends Seeder
             ->value('id')
             ?? throw new LogicException('Seed an administrator account before seeding agencies.');
 
-        foreach (array_chunk($this->records(), 200) as $records) {
+        foreach (array_chunk($this->normalizedRecords(), 200) as $records) {
             Agency::upsert(
                 array_map(fn (array $record): array => $record + [
                     'is_active' => true,
@@ -32,6 +32,42 @@ class AgencySeeder extends Seeder
                 ['email', 'phone', 'remarks', 'is_active', 'updated_by', 'updated_at', 'deleted_at'],
             );
         }
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizedRecords(): array
+    {
+        $normalizedRecords = [];
+
+        foreach ($this->records() as $record) {
+            $record = array_replace([
+                'email' => null,
+                'phone' => null,
+                'remarks' => null,
+                'created_at' => null,
+                'updated_at' => null,
+            ], $record);
+            $record['name'] = $this->normalizeName($record['name']);
+            $normalizedKey = strtolower($record['name']);
+            $existingRecord = $normalizedRecords[$normalizedKey] ?? [];
+
+            foreach ($record as $key => $value) {
+                if ($value !== null) {
+                    $existingRecord[$key] = $value;
+                }
+            }
+
+            $normalizedRecords[$normalizedKey] = array_replace($record, $existingRecord);
+        }
+
+        return array_values($normalizedRecords);
+    }
+
+    private function normalizeName(string $name): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', str_replace('-', '', $name)));
     }
 
     /**

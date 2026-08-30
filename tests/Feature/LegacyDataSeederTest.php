@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Agency;
 use App\Models\Company;
 use App\Models\Token;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,8 +17,8 @@ class LegacyDataSeederTest extends TestCase
     {
         $this->seed();
 
-        $this->assertSame(753, Company::count());
-        $this->assertSame(67, Agency::count());
+        $this->assertSame(751, Company::count());
+        $this->assertSame(65, Agency::count());
         $this->assertSame(1304, Token::count());
         $this->assertSame(0, Company::where('name', 'like', '%-%')->count());
         $this->assertSame(0, Agency::where('name', 'like', '%-%')->count());
@@ -28,7 +29,7 @@ class LegacyDataSeederTest extends TestCase
             'phone' => '+6738609911 and +6737111802',
         ]);
         $this->assertDatabaseHas('agencies', [
-            'name' => 'Marya Indra Az Zahra Employment Agency',
+            'name' => 'Marya Indra AzZahra Employment Agency',
             'email' => 'Miazea2427@gmail.com',
         ]);
 
@@ -37,13 +38,25 @@ class LegacyDataSeederTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame('ATK Perpetual Sdn Bhd', $token->company->name);
-        $this->assertSame('Marya Indra Az Zahra Employment Agency', $token->agency->name);
+        $this->assertSame('Marya Indra AzZahra Employment Agency', $token->agency->name);
         $this->assertSame('Demand Letter Submission', $token->category->name);
         $this->assertSame(1, $token->demanded_workers);
         $this->assertSame(1, $token->approved_workers);
         $this->assertSame('BHC-619/2025; 27/10/2025', $token->bhc_number);
         $this->assertSame('Khairul Arefin', $token->received_by);
-        $this->assertStringContainsString('Legacy required visa attestations: not recorded.', $token->remarks);
+        $this->assertSame('Khairul Arefin', $token->creator->name);
+        $this->assertSame('Rashama Karmakar', $token->currentHolder->name);
+        $this->assertSame('active', $token->file_status);
+
+        $this->assertDatabaseHas('tokens', [
+            'token_number' => 'DL-42038',
+            'created_by' => User::where('name', 'Sagor')->value('id'),
+        ]);
+        $this->assertSame(851, Token::whereBelongsTo(User::where('name', 'Khairul Arefin')->firstOrFail(), 'creator')->count());
+        $this->assertSame(156, Token::whereBelongsTo(User::where('name', 'Sagor')->firstOrFail(), 'creator')->count());
+        $this->assertSame(977, Token::whereBelongsTo(User::where('name', 'Md Ekhlas Uddin')->firstOrFail(), 'currentHolder')->count());
+        $this->assertSame(75, Token::whereBelongsTo(User::where('name', 'Rashama Karmakar')->firstOrFail(), 'currentHolder')->count());
+        $this->assertSame(252, Token::whereNull('current_holder_id')->count());
     }
 
     public function test_legacy_seeders_can_be_rerun_without_creating_duplicates(): void
@@ -52,8 +65,8 @@ class LegacyDataSeederTest extends TestCase
 
         $this->seed();
 
-        $this->assertSame(753, Company::count());
-        $this->assertSame(67, Agency::count());
+        $this->assertSame(751, Company::count());
+        $this->assertSame(65, Agency::count());
         $this->assertSame(1304, Token::count());
     }
 }

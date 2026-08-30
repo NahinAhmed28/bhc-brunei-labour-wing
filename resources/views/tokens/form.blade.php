@@ -137,8 +137,10 @@
 
                 <div class="col-md-4">
                     <label class="form-label">Received By</label>
-                    <input class="form-control" value="{{ $token->received_by ?: 'Not recorded' }}" disabled>
-                    <div class="form-text">This imported record value cannot be changed.</div>
+                    <input class="form-control" value="{{ $token->exists ? ($token->received_by ?: 'Not recorded') : auth()->user()->name }}" disabled>
+                    <div class="form-text">
+                        {{ $token->exists ? 'This imported record value cannot be changed.' : 'Automatically set to the user creating this token.' }}
+                    </div>
                 </div>
 
                 <div class="col-md-4">
@@ -160,6 +162,7 @@
 
                 <div class="col-md-4">
                     <label class="form-label">File Assigned To</label>
+                    @if($token->exists)
                     <select class="form-select" name="current_holder_id">
                         <option value="">Unassigned</option>
                         @foreach($users as $userOption)
@@ -169,6 +172,10 @@
                         @endforeach
                     </select>
                     @error('current_holder_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    @else
+                        <input class="form-control" value="{{ auth()->user()->name }}" disabled>
+                        <div class="form-text">The file is initially assigned to the user creating it.</div>
+                    @endif
                 </div>
 
                 <div class="col-md-4">

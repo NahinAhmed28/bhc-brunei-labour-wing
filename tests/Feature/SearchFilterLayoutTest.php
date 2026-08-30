@@ -111,6 +111,6 @@ class SearchFilterLayoutTest extends TestCase
 
         $response = $this->actingAs($administrator)->get('/agencies?q=%2B6738212701');
 
-        $response->assertSee('Marya Indra Az Zahra Employment Agency');
+        $response->assertSee('Marya Indra AzZahra Employment Agency');
     }
 }

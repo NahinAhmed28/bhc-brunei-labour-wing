@@ -29,9 +29,16 @@ class TokenController extends Controller
         return view('tokens.index', ['tokens' => $tokens, 'preSelectedCount' => Token::where('pre_selected', true)->count(), 'companies' => Company::orderBy('name')->get(), 'agencies' => Agency::orderBy('name')->get(), 'categories' => TokenCategory::orderBy('name')->get(), 'users' => User::with('role')->where('is_active', true)->orderBy('name')->get()]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('tokens.form', $this->formData(new Token(['received_on' => today(), 'boesl_status' => 'pending', 'visa_status' => 'pending', 'file_status' => 'active'])));
+        return view('tokens.form', $this->formData(new Token([
+            'received_on' => today(),
+            'received_by' => $request->user()->name,
+            'current_holder_id' => $request->user()->id,
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+        ])));
     }
 
     public function store(TokenRequest $r)
@@ -62,6 +69,8 @@ class TokenController extends Controller
             $data['token_number'] = $this->nextNumber($category, $isVA);
             $data['created_by'] = $r->user()->id;
             $data['updated_by'] = $r->user()->id;
+            $data['received_by'] = $r->user()->name;
+            $data['current_holder_id'] = $r->user()->id;
             $t = Token::create($data);
             if ($t->current_holder_id) {
                 TokenTransferHistory::create(['token_id' => $t->id, 'new_holder_id' => $t->current_holder_id, 'transferred_by' => $r->user()->id, 'transferred_at' => now(), 'remarks' => 'Initial file assignment']);

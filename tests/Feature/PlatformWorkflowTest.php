@@ -30,12 +30,12 @@ class PlatformWorkflowTest extends TestCase
     public function test_administrator_can_create_token_and_history(): void
     {
         $user = User::where('email', 'mission.bandarseribegawan@mofa.gov.bd')->first();
-        $holder = User::where('email', 'boeseladmin@gmail.com')->firstOrFail();
-        $response = $this->actingAs($user)->post('/tokens', ['company_id' => Company::first()->id, 'agency_id' => Agency::first()->id, 'token_category_id' => TokenCategory::first()->id, 'current_holder_id' => $holder->id, 'received_on' => today()->format('Y-m-d'), 'demanded_workers' => 5, 'approved_workers' => 3, 'boesl_status' => 'pending', 'visa_status' => 'pending', 'file_status' => 'active']);
+        $response = $this->actingAs($user)->post('/tokens', ['company_id' => Company::first()->id, 'agency_id' => Agency::first()->id, 'token_category_id' => TokenCategory::first()->id, 'received_on' => today()->format('Y-m-d'), 'demanded_workers' => 5, 'approved_workers' => 3, 'boesl_status' => 'pending', 'visa_status' => 'pending', 'file_status' => 'active']);
         $response->assertRedirect();
         $token = Token::latest('id')->first();
         $this->assertStringStartsWith('BHC-', $token->token_number);
-        $this->assertSame($holder->id, $token->current_holder_id);
+        $this->assertSame($user->id, $token->current_holder_id);
+        $this->assertSame($user->name, $token->received_by);
         $this->assertCount(1, $token->transferHistories);
     }
 

@@ -15,7 +15,7 @@
         <div class="row g-0">
             <section class="col-lg-6 login-story">
                 <div class="page-eyebrow text-warning">Official operations system</div>
-                <h1 class="display-5 mt-3" style="font-family:Georgia,serif">One record.<br>Every movement.</h1>
+                <h1 class="display-5 mt-3">One record.<br>Every movement.</h1>
                 <div class="official-rule"></div>
                 <p class="text-white-50">A unified register for visa attestations, tokens, desk movement and Bangladesh worker applications in Brunei Darussalam.</p>
             </section>
