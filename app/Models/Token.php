@@ -13,7 +13,22 @@ class Token extends Model
 
     protected function casts(): array
     {
-        return ['received_on' => 'date', 'boesl_date' => 'date', 'site_visit_date' => 'date', 'pre_selected' => 'boolean', 'site_visit_required' => 'boolean', 'cancelled_at' => 'datetime', 'amount' => 'decimal:2'];
+        return [
+            'received_on' => 'date',
+            'boesl_date' => 'date',
+            'site_visit_date' => 'date',
+            'pre_selected' => 'boolean',
+            'site_visit_required' => 'boolean',
+            'cancelled_at' => 'datetime',
+            'amount' => 'decimal:2',
+            'required_visa_attestation' => 'integer',
+        ];
+    }
+
+    /** True when this token belongs to a Visa Attestation category (code = 'VA'). */
+    public function isVA(): bool
+    {
+        return strtoupper(optional($this->category)->code ?? '') === 'VA';
     }
 
     public function company()
@@ -54,5 +69,10 @@ class Token extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

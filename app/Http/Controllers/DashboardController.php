@@ -6,11 +6,27 @@ use App\Models\Applicant;
 use App\Models\AuditLog;
 use App\Models\Desk;
 use App\Models\Token;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke()
+    public function __invoke(): View
     {
-        return view('dashboard', ['stats' => ['tokens_today' => Token::whereDate('created_at', today())->count(), 'tokens_total' => Token::count(), 'demanded' => Token::sum('demanded_workers'), 'approved' => Token::sum('approved_workers'), 'applicants' => Applicant::count(), 'pending_bhc' => Token::whereNull('bhc_number')->count(), 'pending_boesl' => Token::where('boesl_status', 'pending')->count(), 'awaiting_flight' => Applicant::where('flight_status', 'pending')->count()], 'deskCounts' => Desk::withCount('tokens')->orderBy('display_order')->get(), 'recent' => AuditLog::with('user')->latest()->limit(8)->get()]);
+        $metrics = [
+            ['label' => 'Tokens today', 'value' => Token::whereDate('created_at', today())->count(), 'url' => route('tokens.index', ['created' => 'today']), 'icon' => 'calendar-event'],
+            ['label' => 'Total tokens', 'value' => Token::count(), 'url' => route('tokens.index'), 'icon' => 'ticket-detailed'],
+            ['label' => 'Demanded workers', 'value' => Token::sum('demanded_workers'), 'url' => route('tokens.index'), 'icon' => 'people'],
+            ['label' => 'Approved workers', 'value' => Token::sum('approved_workers'), 'url' => route('tokens.index'), 'icon' => 'person-check'],
+            ['label' => 'Applicants entered', 'value' => Applicant::count(), 'url' => route('applicants.index'), 'icon' => 'person-vcard'],
+            ['label' => 'Pending BHC No.', 'value' => Token::whereNull('bhc_number')->count(), 'url' => route('tokens.index', ['bhc_status' => 'pending']), 'icon' => 'file-earmark-text'],
+            ['label' => 'Pending BOESL', 'value' => Token::where('boesl_status', 'pending')->count(), 'url' => route('tokens.index', ['boesl_status' => 'pending']), 'icon' => 'hourglass-split'],
+            ['label' => 'Awaiting flight', 'value' => Applicant::where('flight_status', 'pending')->count(), 'url' => route('applicants.index', ['flight_status' => 'pending']), 'icon' => 'airplane'],
+        ];
+
+        return view('dashboard', [
+            'metrics' => $metrics,
+            'deskCounts' => Desk::withCount('tokens')->orderBy('display_order')->get(),
+            'recent' => AuditLog::with('user')->latest()->limit(8)->get(),
+        ]);
     }
 }

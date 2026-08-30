@@ -1,0 +1,319 @@
+.token-row {
+    cursor: pointer;
+}
+
+.token-row:focus-visible {
+    outline: 3px solid rgba(214, 166, 46, .58);
+    outline-offset: -3px;
+}
+
+.token-row-title {
+    padding: 0;
+    color: var(--bhc-green);
+    font: inherit;
+    font-weight: 700;
+    background: transparent;
+    border: 0;
+}
+
+.token-row-title:hover,
+.token-row-title:focus-visible {
+    color: var(--bhc-green-dark);
+    text-decoration: underline;
+}
+
+.token-modal-header {
+    color: #fff;
+    background: linear-gradient(115deg, var(--bhc-green-dark), var(--bhc-green));
+    border-bottom: 3px solid var(--brunei-gold);
+}
+
+.token-modal-header .page-eyebrow,
+.token-modal-header p {
+    color: rgba(255, 255, 255, .72);
+}
+
+.token-modal-header .modal-title {
+    font-size: 1.45rem;
+    letter-spacing: .035em;
+}
+
+.token-modal-layout {
+    min-height: min(690px, calc(100vh - 13rem));
+}
+
+.token-modal-details {
+    max-height: calc(100vh - 13rem);
+    overflow-y: auto;
+    background: #fff;
+}
+
+.token-modal-section {
+    padding: 1.4rem 1.5rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.token-modal-section:last-child {
+    border-bottom: 0;
+}
+
+.token-modal-section-title {
+    margin-bottom: 1rem;
+    color: var(--ink);
+    font-size: .92rem;
+    font-weight: 750;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+}
+
+.token-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.1rem 1rem;
+}
+
+.token-detail-grid div {
+    min-width: 0;
+}
+
+.token-detail-grid dt,
+.token-modal-note span {
+    margin-bottom: .3rem;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .065em;
+    text-transform: uppercase;
+}
+
+.token-detail-grid dd {
+    margin-bottom: 0;
+    color: var(--ink);
+    font-size: .88rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.token-modal-note {
+    padding: .9rem 1rem;
+    background: var(--paper);
+    border-left: 3px solid var(--brunei-gold);
+    border-radius: 0 .55rem .55rem 0;
+}
+
+.token-modal-note p {
+    font-size: .86rem;
+}
+
+.token-modal-count {
+    display: inline-grid;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 .45rem;
+    place-items: center;
+    color: var(--bhc-green);
+    font-size: .75rem;
+    font-weight: 750;
+    background: var(--bhc-green-soft);
+    border-radius: 999px;
+}
+
+.token-related-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .75rem 0;
+    border-top: 1px solid var(--line);
+}
+
+.token-related-row:first-of-type {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.token-history-item {
+    position: relative;
+    display: flex;
+    gap: .75rem;
+    padding: 0 0 1rem;
+}
+
+.token-history-item:last-child {
+    padding-bottom: 0;
+}
+
+.token-history-marker {
+    width: .65rem;
+    height: .65rem;
+    margin-top: .3rem;
+    flex: 0 0 auto;
+    background: var(--brunei-gold);
+    border: 2px solid #fff;
+    border-radius: 999px;
+    box-shadow: 0 0 0 2px var(--brunei-gold);
+}
+
+.token-modal-audit {
+    background: var(--paper);
+}
+
+.token-document-pane {
+    max-height: calc(100vh - 13rem);
+    overflow-y: auto;
+    background: #eef2f0;
+    border-left: 1px solid var(--line);
+}
+
+.token-document-pane-header {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    padding: 1rem 1.15rem;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+}
+
+.token-document-pane-header .detail-label,
+.token-document-pane-header strong {
+    display: block;
+}
+
+.token-document-pane-header strong {
+    color: var(--ink);
+    font-size: .95rem;
+}
+
+.token-document-pane-header p {
+    margin-top: .25rem;
+    color: var(--muted);
+    font-size: .76rem;
+}
+
+.token-document-slot {
+    margin: 1rem;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--brunei-gold);
+    border-radius: .7rem;
+    box-shadow: 0 .35rem 1rem rgba(19, 61, 48, .07);
+}
+
+.token-document-slot-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .9rem 1rem .75rem;
+}
+
+.token-document-slot-header h3 {
+    margin: .15rem 0 0;
+    color: var(--ink);
+    font-size: .95rem;
+}
+
+.token-document-kicker {
+    color: var(--bhc-green);
+    font-size: .66rem;
+    font-weight: 750;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.token-document-upload {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .55rem;
+    padding: 0 1rem .9rem;
+}
+
+.token-document-preview {
+    margin: 0 1rem;
+    overflow: hidden;
+    background: #dfe7e3;
+    border: 1px solid var(--line);
+    border-radius: .45rem;
+}
+
+.token-document-preview iframe {
+    width: 100%;
+    min-height: 420px;
+    background: #fff;
+    border: 0;
+}
+
+.token-document-preview img {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+}
+
+.token-document-filename {
+    padding: .65rem 1rem .8rem;
+    color: var(--muted);
+    font-size: .72rem;
+    overflow-wrap: anywhere;
+}
+
+.token-document-empty {
+    display: grid;
+    min-height: 180px;
+    margin: 0 1rem 1rem;
+    place-items: center;
+    align-content: center;
+    gap: .55rem;
+    color: var(--muted);
+    text-align: center;
+    background: repeating-linear-gradient(-45deg, #f8faf9, #f8faf9 10px, #f1f5f3 10px, #f1f5f3 20px);
+    border: 1px dashed #aebdb6;
+    border-radius: .45rem;
+}
+
+.token-document-empty i {
+    color: var(--bhc-green);
+    font-size: 1.6rem;
+}
+
+.token-document-empty p {
+    max-width: 15rem;
+    font-size: .78rem;
+}
+
+@media (max-width: 991.98px) {
+    .token-modal-layout {
+        min-height: 0;
+    }
+
+    .token-modal-details {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .token-document-pane {
+        max-height: none;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .token-detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .token-modal-section {
+        padding: 1.15rem;
+    }
+
+    .token-related-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .token-document-upload {
+        grid-template-columns: 1fr;
+    }
+}

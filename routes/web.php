@@ -26,10 +26,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/configuration/categories', [ConfigurationController::class, 'category'])->name('configuration.categories')->middleware('role:super-admin');
     Route::post('/configuration/desks', [ConfigurationController::class, 'desk'])->name('configuration.desks')->middleware('role:super-admin');
     Route::resource('tokens', TokenController::class)->only('index', 'show');
+    Route::get('/tokens/{token}/modal', [TokenController::class, 'modal'])->name('tokens.modal');
     Route::get('/tokens/{token}/pdf', [TokenController::class, 'pdf'])->name('tokens.pdf');
     Route::middleware('role:super-admin,administrator')->group(function () {
         Route::resource('tokens', TokenController::class)->only('create', 'store', 'edit', 'update');
         Route::post('/tokens/{token}/cancel', [TokenController::class, 'cancel'])->name('tokens.cancel');
+        Route::post('/tokens/{token}/documents', [DocumentController::class, 'storeToken'])->name('tokens.documents.store');
     });
     Route::resource('applicants', ApplicantController::class)->only('index', 'show');
     Route::get('/applicants/{applicant}/letters/{type}', [ApplicantController::class, 'letter'])->name('applicants.letter');
@@ -38,9 +40,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/applicants/{applicant}/documents', [DocumentController::class, 'store'])->name('documents.store');
     });
     Route::get('/documents/{document}', [DocumentController::class, 'download'])->name('documents.download');
+    Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])->name('documents.preview');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/tokens/{format}', [ReportController::class, 'tokens'])->whereIn('format', ['pdf', 'excel'])->name('reports.tokens');
     Route::get('/reports/applicants/{format}', [ReportController::class, 'applicants'])->whereIn('format', ['pdf', 'excel'])->name('reports.applicants');
     Route::get('/audit', [AuditController::class, 'index'])->name('audit.index')->middleware('role:super-admin,viewer');
-    Route::resource('users',UserController::class)->except('show','destroy')->middleware('role:super-admin');
+    Route::resource('users', UserController::class)->except('show', 'destroy')->middleware('role:super-admin');
 });

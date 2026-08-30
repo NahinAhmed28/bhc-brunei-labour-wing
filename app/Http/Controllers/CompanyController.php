@@ -11,7 +11,13 @@ class CompanyController extends Controller
 {
     public function index(Request $r)
     {
-        $items = Company::when($r->q, fn ($q, $v) => $q->where('name', 'like', "%$v%"))->orderBy('name')->paginate(15)->withQueryString();
+        $items = Company::when($r->q, fn ($q, $v) => $q->where(fn ($search) => $search
+            ->where('name', 'like', "%$v%")
+            ->orWhere('email', 'like', "%$v%")
+            ->orWhere('phone', 'like', "%$v%")))
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('masters.index', ['items' => $items, 'type' => 'companies', 'title' => 'Company List']);
     }
@@ -50,6 +56,6 @@ class CompanyController extends Controller
         $company->delete();
         AuditService::record('deactivate', 'companies', $company);
 
-        return back()->with('success','Company deactivated.');
+        return back()->with('success', 'Company deactivated.');
     }
 }

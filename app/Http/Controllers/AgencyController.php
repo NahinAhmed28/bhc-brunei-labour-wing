@@ -11,7 +11,13 @@ class AgencyController extends Controller
 {
     public function index(Request $r)
     {
-        $items = Agency::when($r->q, fn ($q, $v) => $q->where('name', 'like', "%$v%"))->orderBy('name')->paginate(15)->withQueryString();
+        $items = Agency::when($r->q, fn ($q, $v) => $q->where(fn ($search) => $search
+            ->where('name', 'like', "%$v%")
+            ->orWhere('email', 'like', "%$v%")
+            ->orWhere('phone', 'like', "%$v%")))
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('masters.index', ['items' => $items, 'type' => 'agencies', 'title' => 'Agencies List']);
     }
@@ -50,6 +56,6 @@ class AgencyController extends Controller
         $agency->delete();
         AuditService::record('deactivate', 'agencies', $agency);
 
-        return back()->with('success','Agency deactivated.');
+        return back()->with('success', 'Agency deactivated.');
     }
 }
