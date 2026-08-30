@@ -49,10 +49,44 @@ class PlatformWorkflowTest extends TestCase
         $this->assertNotSame(999, $token->fresh()->demanded_workers);
     }
 
-    public function test_company_name_rejects_hyphens_and_dots(): void
+    public function test_company_create_rejects_hyphens(): void
     {
         $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
-        $this->actingAs($user)->post('/companies', ['name' => 'Invalid-Company', 'is_active' => 1])->assertSessionHasErrors('name');
+        $response = $this->actingAs($user)->post('/companies', ['name' => 'Invalid-Company', 'is_active' => 1]);
+
+        $response->assertSessionHasErrors(['name' => 'Names may not contain hyphens or dots.']);
+        $this->assertDatabaseMissing('companies', ['name' => 'Invalid-Company']);
+    }
+
+    public function test_agency_create_rejects_unicode_hyphens(): void
+    {
+        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $response = $this->actingAs($user)->post('/agencies', ['name' => 'Invalid–Agency', 'is_active' => 1]);
+
+        $response->assertSessionHasErrors(['name' => 'Names may not contain hyphens or dots.']);
+        $this->assertDatabaseMissing('agencies', ['name' => 'Invalid–Agency']);
+    }
+
+    public function test_company_edit_rejects_unicode_minus_as_a_hyphen(): void
+    {
+        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $company = Company::firstOrFail();
+        $originalName = $company->name;
+        $response = $this->actingAs($user)->put(route('companies.update', $company), ['name' => 'Invalid−Company', 'is_active' => 1]);
+
+        $response->assertSessionHasErrors(['name' => 'Names may not contain hyphens or dots.']);
+        $this->assertSame($originalName, $company->fresh()->name);
+    }
+
+    public function test_agency_edit_rejects_hyphens(): void
+    {
+        $user = User::where('email', 'operations@bhcbrunei.gov.bd')->first();
+        $agency = Agency::firstOrFail();
+        $originalName = $agency->name;
+        $response = $this->actingAs($user)->put(route('agencies.update', $agency), ['name' => 'Invalid-Agency', 'is_active' => 1]);
+
+        $response->assertSessionHasErrors(['name' => 'Names may not contain hyphens or dots.']);
+        $this->assertSame($originalName, $agency->fresh()->name);
     }
 
     public function test_applicant_limit_is_enforced(): void

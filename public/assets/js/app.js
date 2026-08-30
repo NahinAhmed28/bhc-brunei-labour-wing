@@ -10,6 +10,44 @@ document.querySelectorAll('[data-confirm]').forEach((form) => {
     });
 });
 
+document.querySelectorAll('[data-no-hyphen]').forEach((input) => {
+    const hyphenPattern = /[-\u00ad\u2010-\u2015\u2212]/u;
+    const allHyphensPattern = /[-\u00ad\u2010-\u2015\u2212]/gu;
+
+    input.addEventListener('beforeinput', (event) => {
+        if (event.data && hyphenPattern.test(event.data)) {
+            event.preventDefault();
+        }
+    });
+
+    input.addEventListener('input', () => {
+        input.value = input.value.replace(allHyphensPattern, '');
+    });
+});
+
+document.querySelectorAll('[data-token-lookup]').forEach((input) => {
+    const form = input.closest('form');
+    const tokenIdInput = form?.querySelector('[data-token-lookup-value]');
+    const options = Array.from(document.querySelectorAll(`#${input.list.id} option`));
+
+    const matchToken = () => {
+        const query = input.value.trim().toLocaleLowerCase();
+        const option = options.find((candidate) => [candidate.value, candidate.dataset.bhcNumber]
+            .filter(Boolean)
+            .some((identifier) => identifier.toLocaleLowerCase() === query));
+
+        if (tokenIdInput) {
+            tokenIdInput.value = option?.dataset.tokenId ?? '';
+        }
+
+        input.setCustomValidity(query && ! option ? 'Select an authorized BHC or token number from the suggestions.' : '');
+    };
+
+    input.addEventListener('input', matchToken);
+    input.addEventListener('change', matchToken);
+    form?.addEventListener('submit', matchToken);
+});
+
 const tokenModalElement = document.querySelector('#tokenDetailsModal');
 const tokenModalContent = tokenModalElement?.querySelector('[data-token-modal-content]');
 let tokenModalRequest;

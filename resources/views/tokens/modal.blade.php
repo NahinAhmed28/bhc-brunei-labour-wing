@@ -70,17 +70,11 @@
                     <h3 class="token-modal-section-title mb-0">Applicants</h3>
                     <span class="token-modal-count">{{ $token->applicants->count() }}</span>
                 </div>
-                @forelse($token->applicants as $applicant)
-                    <div class="token-related-row">
-                        <div>
-                            <strong>{{ $applicant->full_name }}</strong>
-                            <div class="small text-secondary">{{ $applicant->passport_number }} · {{ ucfirst($applicant->visa_status) }}</div>
-                        </div>
-                        <a class="btn btn-sm btn-light" href="{{ route('applicants.show', $applicant) }}">View applicant</a>
-                    </div>
-                @empty
-                    <p class="text-secondary mb-0">No applicants are attached to this token.</p>
-                @endforelse
+                <p class="text-secondary">View the applicant roster connected to this token.</p>
+                <button class="btn btn-sm btn-light" type="button"
+                    data-token-modal-url="{{ route('tokens.applicants.modal', $token) }}">
+                    <i class="bi bi-people me-1" aria-hidden="true"></i>View applicants
+                </button>
             </section>
 
             <section class="token-modal-section">

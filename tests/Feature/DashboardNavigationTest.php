@@ -26,5 +26,7 @@ class DashboardNavigationTest extends TestCase
         $response->assertSee('href="'.route('applicants.index', ['flight_status' => 'pending']).'"', false);
         $response->assertSee('href="'.route('tokens.index').'"', false);
         $response->assertSee('href="'.route('applicants.index').'"', false);
+        $response->assertSee('bi-passport" aria-hidden="true"></i> Applicants', false);
+        $response->assertDontSee('bi-passport" aria-hidden="true"></i> Applications', false);
     }
 }

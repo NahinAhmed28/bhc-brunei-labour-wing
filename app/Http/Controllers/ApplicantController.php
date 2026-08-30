@@ -28,7 +28,7 @@ class ApplicantController extends Controller
     {
         $applicant = new Applicant(['token_id' => $r->token_id, 'nationality' => 'Bangladeshi', 'tracking_status' => 'pending', 'visa_status' => 'pending', 'flight_status' => 'pending', 'insurance_status' => 'pending', 'ic_status' => 'pending', 'medical_status' => 'pending', 'boesl_status' => 'pending']);
 
-        return view('applicants.form', ['applicant' => $applicant, 'tokens' => Token::with(['company', 'agency'])->where('file_status', '!=', 'cancelled')->latest()->get()]);
+        return view('applicants.form', ['applicant' => $applicant, 'tokens' => Token::with(['company', 'agency'])->withCount('applicants')->where('file_status', '!=', 'cancelled')->latest()->get()]);
     }
 
     public function store(ApplicantRequest $r)
@@ -54,7 +54,7 @@ class ApplicantController extends Controller
 
     public function edit(Applicant $applicant)
     {
-        return view('applicants.form', ['applicant' => $applicant, 'tokens' => Token::with(['company', 'agency'])->where('file_status', '!=', 'cancelled')->latest()->get()]);
+        return view('applicants.form', ['applicant' => $applicant, 'tokens' => Token::with(['company', 'agency'])->withCount('applicants')->where('file_status', '!=', 'cancelled')->latest()->get()]);
     }
 
     public function update(ApplicantRequest $r, Applicant $applicant)
@@ -82,6 +82,6 @@ class ApplicantController extends Controller
         $applicant->load('token.company', 'token.agency');
         AuditService::record('generate-letter', 'applicants', $applicant, [], ['type' => $type]);
 
-        return Pdf::loadView('pdf.letter',compact('applicant','type'))->setPaper('a4')->download(strtoupper($type).'-'.$applicant->passport_number.'.pdf');
+        return Pdf::loadView('pdf.letter', compact('applicant', 'type'))->setPaper('a4')->download(strtoupper($type).'-'.$applicant->passport_number.'.pdf');
     }
 }

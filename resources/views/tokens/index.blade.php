@@ -265,7 +265,13 @@
                         @endif
                     </td>
 
-                    <td class="col-hide-md">{{ $token->approved_workers ?? '—' }}</td>
+                    <td class="col-hide-md">
+                        <div>{{ $token->approved_workers ?? '—' }}</div>
+                        <button class="btn btn-sm btn-light mt-1 token-applicants-button" type="button"
+                            data-token-modal-url="{{ route('tokens.applicants.modal', $token) }}">
+                            <i class="bi bi-people me-1" aria-hidden="true"></i>Applicants ({{ $token->applicants_count }})
+                        </button>
+                    </td>
 
                     <td class="col-hide-md">{{ $token->bhc_number ?: '—' }}</td>
 
@@ -364,6 +370,10 @@
                 </dl>
 
                 <div class="token-card-actions">
+                    <button class="btn btn-sm btn-light w-100" type="button"
+                        data-token-modal-url="{{ route('tokens.applicants.modal', $token) }}">
+                        <i class="bi bi-people me-1"></i>Applicants ({{ $token->applicants_count }})
+                    </button>
                     <button class="btn btn-sm btn-light w-100" type="button"
                         data-token-modal-url="{{ route('tokens.modal', $token) }}">
                         <i class="bi bi-eye me-1"></i>View Details

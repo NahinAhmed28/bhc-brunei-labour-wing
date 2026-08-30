@@ -27,18 +27,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/configuration/desks', [ConfigurationController::class, 'desk'])->name('configuration.desks')->middleware('role:super-admin');
     Route::resource('tokens', TokenController::class)->only('index', 'show');
     Route::get('/tokens/{token}/modal', [TokenController::class, 'modal'])->name('tokens.modal');
+    Route::get('/tokens/{token}/applicants/modal', [TokenController::class, 'applicantsModal'])->name('tokens.applicants.modal');
     Route::get('/tokens/{token}/pdf', [TokenController::class, 'pdf'])->name('tokens.pdf');
     Route::middleware('role:super-admin,administrator')->group(function () {
         Route::resource('tokens', TokenController::class)->only('create', 'store', 'edit', 'update');
         Route::post('/tokens/{token}/cancel', [TokenController::class, 'cancel'])->name('tokens.cancel');
         Route::post('/tokens/{token}/documents', [DocumentController::class, 'storeToken'])->name('tokens.documents.store');
     });
-    Route::resource('applicants', ApplicantController::class)->only('index', 'show');
-    Route::get('/applicants/{applicant}/letters/{type}', [ApplicantController::class, 'letter'])->name('applicants.letter');
+    Route::resource('applicants', ApplicantController::class)->only('index');
     Route::middleware('role:super-admin,administrator,data-entry')->group(function () {
         Route::resource('applicants', ApplicantController::class)->only('create', 'store', 'edit', 'update');
         Route::post('/applicants/{applicant}/documents', [DocumentController::class, 'store'])->name('documents.store');
     });
+    Route::resource('applicants', ApplicantController::class)->only('show');
+    Route::get('/applicants/{applicant}/letters/{type}', [ApplicantController::class, 'letter'])->name('applicants.letter');
     Route::get('/documents/{document}', [DocumentController::class, 'download'])->name('documents.download');
     Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])->name('documents.preview');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Agency;
+use App\Models\Applicant;
 use App\Models\Company;
 use App\Models\Document;
 use App\Models\Role;
@@ -24,6 +25,8 @@ class TokenModalTest extends TestCase
 
         $response->assertSee('class="token-row"', false);
         $response->assertSee('data-token-modal-url="'.route('tokens.modal', $token).'"', false);
+        $response->assertSee('data-token-modal-url="'.route('tokens.applicants.modal', $token).'"', false);
+        $response->assertSee('token-applicants-button', false);
         $response->assertSee('aria-controls="tokenDetailsModal"', false);
         $response->assertSee('href="'.route('tokens.edit', $token).'"', false);
         $response->assertDontSee('href="'.route('tokens.show', $token).'"', false);
@@ -71,6 +74,27 @@ class TokenModalTest extends TestCase
         $response->assertSee('src="'.route('documents.preview', $confirmationLetter).'"', false);
         $response->assertSee('src="'.route('documents.preview', $demandLetter).'"', false);
         $response->assertDontSeeText('PDF preview');
+    }
+
+    public function test_applicant_roster_modal_links_applicant_names_to_their_details(): void
+    {
+        [$administrator, $token] = $this->createToken();
+        $applicant = Applicant::create([
+            'token_id' => $token->id,
+            'full_name' => 'Nur Rahman',
+            'passport_number' => 'BA0123456',
+            'registration_number' => 'REG-1001',
+            'created_by' => $administrator->id,
+            'updated_by' => $administrator->id,
+        ]);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.applicants.modal', $token));
+
+        $response->assertOk();
+        $response->assertSeeText('Applicant roster');
+        $response->assertSeeText($token->token_number);
+        $response->assertSeeText($applicant->full_name);
+        $response->assertSee('href="'.route('applicants.show', $applicant).'"', false);
     }
 
     /**

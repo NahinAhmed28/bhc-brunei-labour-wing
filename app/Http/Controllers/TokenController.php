@@ -11,6 +11,7 @@ use App\Models\TokenCategory;
 use App\Models\TokenDeskHistory;
 use App\Services\AuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -103,6 +104,17 @@ class TokenController extends Controller
         $tokenDocuments = $token->documents->unique('type')->keyBy('type');
 
         return view('tokens.modal', compact('token', 'tokenDocuments'));
+    }
+
+    public function applicantsModal(Token $token): View
+    {
+        $token->load([
+            'company',
+            'agency',
+            'applicants' => fn ($query) => $query->orderBy('full_name'),
+        ]);
+
+        return view('tokens.applicants-modal', compact('token'));
     }
 
     public function edit(Token $token)

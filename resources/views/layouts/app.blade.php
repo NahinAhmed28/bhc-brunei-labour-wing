@@ -35,7 +35,7 @@
                 <i class="bi bi-ticket-detailed" aria-hidden="true"></i> Tokens
             </a>
             <a class="nav-link {{ request()->routeIs('applicants.*') ? 'active' : '' }}" href="{{ route('applicants.index') }}">
-                <i class="bi bi-passport" aria-hidden="true"></i> Applications
+                <i class="bi bi-passport" aria-hidden="true"></i> Applicants
             </a>
             <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
                 <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Reports
