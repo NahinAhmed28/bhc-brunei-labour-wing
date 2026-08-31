@@ -4,5 +4,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| {resources/views/tokens/index.blade.php,public/assets/css/token-list.css} | .ai/rules/assets-css.md |
 | {resources/views/layouts/**,public/assets/css/**} | .ai/rules/css.md |
 | {app,resources,routes,tests,database/seeders}/** | .ai/rules/seeders.md |

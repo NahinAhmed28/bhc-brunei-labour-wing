@@ -24,6 +24,12 @@ class TokenModalTest extends TestCase
         $response = $this->actingAs($administrator)->get(route('tokens.index'));
 
         $response->assertSee('class="token-row"', false);
+        $response->assertSee('class="card mb-4 token-register-card"', false);
+        $response->assertSee('href="'.asset('assets/css/token-list.css').'"', false);
+        $response->assertSee('class="token-column-label"', false);
+        $response->assertSee('scope="col"', false);
+        $response->assertSee('class="token-action token-action-view"', false);
+        $response->assertSee('class="token-action token-action-edit"', false);
         $response->assertSee('data-token-modal-url="'.route('tokens.modal', $token).'"', false);
         $response->assertSee('data-token-modal-url="'.route('tokens.workers.modal', $token).'"', false);
         $response->assertSee('token-workers-button', false);

@@ -2,6 +2,10 @@
 
 @section('title', 'Token Submissions')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/token-list.css') }}">
+@endpush
+
 @section('content')
 
 <style>
@@ -99,7 +103,7 @@
 </div>
 
 {{-- ── Filter card ── --}}
-<div class="card mb-4">
+<div class="card mb-4 token-register-card">
     <div class="card-body border-bottom">
         <form class="filter-grid" method="get">
 
@@ -193,7 +197,7 @@
                 <button class="btn btn-outline-primary" type="submit">
                     <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter
                 </button>
-                <a class="btn btn-light" href="{{ route('tokens.index') }}">
+                <a class="btn btn-light" href="{{ route('tokens.index') }}" aria-label="Clear token filters" title="Clear filters">
                     <i class="bi bi-x-lg" aria-hidden="true"></i>
                 </a>
             </div>
@@ -205,20 +209,20 @@
          DESKTOP / MID TABLE VIEW  (≥768 px)
     ══════════════════════════════════════════════ --}}
     <div class="token-table-view token-table-wrap">
-        <table class="table table-hover token-table mb-0">
-            <thead class="table-light">
+        <table class="table token-table mb-0">
+            <thead>
                 <tr>
-                    <th class="ps-4">Token</th>
-                    <th>Category</th>
-                    <th>Agency</th>
-                    <th>Company</th>
+                    <th class="ps-4" scope="col"><span class="token-column-label"><i class="bi bi-hash" aria-hidden="true"></i>Token</span></th>
+                    <th scope="col"><span class="token-column-label"><i class="bi bi-tag" aria-hidden="true"></i>Category</span></th>
+                    <th scope="col"><span class="token-column-label"><i class="bi bi-briefcase" aria-hidden="true"></i>Agency</span></th>
+                    <th scope="col"><span class="token-column-label"><i class="bi bi-buildings" aria-hidden="true"></i>Company</span></th>
                     {{-- Hidden on md, visible on lg+ --}}
-                    <th class="col-hide-md">Received On</th>
-                    <th>Demanded / VA</th>
-                    <th class="col-hide-md">Approved</th>
-                    <th class="col-hide-md">BHC No.</th>
-                    <th>BOESL</th>
-                    <th class="pe-4 text-end">Actions</th>
+                    <th class="col-hide-md" scope="col"><span class="token-column-label"><i class="bi bi-calendar3" aria-hidden="true"></i>Received</span></th>
+                    <th scope="col"><span class="token-column-label"><i class="bi bi-person-lines-fill" aria-hidden="true"></i>Demand / VA</span></th>
+                    <th class="col-hide-md" scope="col"><span class="token-column-label"><i class="bi bi-person-check" aria-hidden="true"></i>Approved</span></th>
+                    <th class="col-hide-md" scope="col"><span class="token-column-label"><i class="bi bi-file-earmark-check" aria-hidden="true"></i>BHC No.</span></th>
+                    <th scope="col"><span class="token-column-label"><i class="bi bi-send-check" aria-hidden="true"></i>BOESL</span></th>
+                    <th class="pe-4 text-end" scope="col"><span class="token-column-label justify-content-end"><i class="bi bi-command" aria-hidden="true"></i>Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -237,43 +241,55 @@
 
                     <td class="ps-4">
                         <button class="token-row-title" type="button"
+                            aria-label="Open token {{ $token->token_number }} details"
                             data-token-modal-url="{{ route('tokens.modal', $token) }}">
-                            {{ $token->token_number }}
+                            <span class="token-reference-prefix">REF</span>
+                            <span>{{ $token->token_number }}</span>
                         </button>
-                        <div class="small text-secondary">{{ $token->workers_count }} workers</div>
+                        <div class="token-row-meta"><i class="bi bi-people" aria-hidden="true"></i>{{ $token->workers_count }} workers</div>
                         @if($token->pre_selected)
-                            <span class="badge bg-info-subtle text-info-emphasis" style="font-size:.68rem">Pre-selected</span>
+                            <span class="token-flag"><i class="bi bi-check2-circle" aria-hidden="true"></i>Pre-selected</span>
                         @endif
                     </td>
 
                     <td>
-                        <span class="text-nowrap">{{ $token->category->name ?? '—' }}</span>
+                        <span class="token-category">{{ $token->category->name ?? '—' }}</span>
                     </td>
 
-                    <td>{{ $token->agency->name ?? '—' }}</td>
+                    <td><span class="token-entity">{{ $token->agency->name ?? '—' }}</span></td>
 
-                    <td>{{ $token->company->name ?? '—' }}</td>
+                    <td><span class="token-entity">{{ $token->company->name ?? '—' }}</span></td>
 
                     <td class="col-hide-md">
-                        {{ $token->received_on ? $token->received_on->format('d M Y') : '—' }}
+                        @if($token->received_on)
+                            <time class="token-date" datetime="{{ $token->received_on->format('Y-m-d') }}">{{ $token->received_on->format('d M Y') }}</time>
+                        @else
+                            <span class="token-empty">Not recorded</span>
+                        @endif
                     </td>
 
                     <td>
-                        <span>{{ $demandVal }}</span>
+                        <span class="token-quantity">{{ $demandVal }}</span>
                         @if($demandLabel)
-                            <span class="badge bg-secondary-subtle text-secondary-emphasis ms-1" style="font-size:.65rem">{{ $demandLabel }}</span>
+                            <span class="token-type-badge">{{ $demandLabel }}</span>
                         @endif
                     </td>
 
                     <td class="col-hide-md">
-                        <div>{{ $token->approved_workers ?? '—' }}</div>
-                        <button class="btn btn-sm btn-light mt-1 token-workers-button" type="button"
+                        <div class="token-approval-value">{{ $token->approved_workers ?? '—' }}</div>
+                        <button class="token-workers-button" type="button"
                             data-token-modal-url="{{ route('tokens.workers.modal', $token) }}">
-                            <i class="bi bi-people me-1" aria-hidden="true"></i>Workers ({{ $token->workers_count }})
+                            <i class="bi bi-people" aria-hidden="true"></i><span>Workers</span><strong>{{ $token->workers_count }}</strong>
                         </button>
                     </td>
 
-                    <td class="col-hide-md">{{ $token->bhc_number ?: '—' }}</td>
+                    <td class="col-hide-md">
+                        @if($token->bhc_number)
+                            <span class="bhc-reference">{{ $token->bhc_number }}</span>
+                        @else
+                            <span class="bhc-pending"><i class="bi bi-clock" aria-hidden="true"></i>Pending</span>
+                        @endif
+                    </td>
 
                     <td>
                         <span class="status {{ match($token->boesl_status) {
@@ -281,19 +297,21 @@
                             'returned'     => 'status-danger',
                             'not-required' => 'status-neutral',
                             default        => 'status-warning',
-                        } }}">{{ ucwords(str_replace('-', ' ', $token->boesl_status)) }}</span>
+                        } }}" aria-label="BOESL status: {{ ucwords(str_replace('-', ' ', $token->boesl_status)) }}">{{ ucwords(str_replace('-', ' ', $token->boesl_status)) }}</span>
                     </td>
 
-                    <td class="text-nowrap text-end pe-4">
-                        <button class="btn btn-sm btn-light" type="button"
+                    <td class="text-end pe-4">
+                        <div class="token-row-actions">
+                        <button class="token-action token-action-view" type="button"
                             data-token-modal-url="{{ route('tokens.modal', $token) }}">
-                            <i class="bi bi-eye me-1" aria-hidden="true"></i>View
+                            <i class="bi bi-eye" aria-hidden="true"></i><span>View</span>
                         </button>
                         @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
-                            <a class="btn btn-sm btn-light" href="{{ route('tokens.edit', $token) }}">
-                                <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit
+                            <a class="token-action token-action-edit" href="{{ route('tokens.edit', $token) }}">
+                                <i class="bi bi-pencil-square" aria-hidden="true"></i><span>Edit</span>
                             </a>
                         @endif
+                        </div>
                     </td>
 
                 </tr>
@@ -318,10 +336,10 @@
                 $demandVal   = $isVA ? ($token->required_visa_attestation ?? '—') : ($token->demanded_workers ?? '—');
                 $demandTitle = $isVA ? 'Visa Attestation' : 'Demanded Workers';
             @endphp
-            <div class="token-card">
+            <div class="token-card token-register-mobile-card">
                 <div class="token-card-header">
                     <div>
-                        <div class="token-card-title">{{ $token->token_number }}</div>
+                        <div class="token-card-title"><span class="token-reference-prefix">REF</span>{{ $token->token_number }}</div>
                         <div class="small text-secondary">{{ $token->category->name ?? '—' }}</div>
                     </div>
                     <span class="status {{ match($token->boesl_status) {
@@ -370,17 +388,17 @@
                 </dl>
 
                 <div class="token-card-actions">
-                    <button class="btn btn-sm btn-light w-100" type="button"
+                    <button class="token-action token-action-workers" type="button"
                         data-token-modal-url="{{ route('tokens.workers.modal', $token) }}">
-                        <i class="bi bi-people me-1"></i>Workers ({{ $token->workers_count }})
+                        <i class="bi bi-people"></i>Workers <strong>{{ $token->workers_count }}</strong>
                     </button>
-                    <button class="btn btn-sm btn-light w-100" type="button"
+                    <button class="token-action token-action-view" type="button"
                         data-token-modal-url="{{ route('tokens.modal', $token) }}">
-                        <i class="bi bi-eye me-1"></i>View Details
+                        <i class="bi bi-eye"></i>View details
                     </button>
                     @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
-                        <a class="btn btn-sm btn-light flex-fill" href="{{ route('tokens.edit', $token) }}">
-                            <i class="bi bi-pencil-square me-1"></i>Edit
+                        <a class="token-action token-action-edit" href="{{ route('tokens.edit', $token) }}">
+                            <i class="bi bi-pencil-square"></i>Edit
                         </a>
                     @endif
                 </div>
