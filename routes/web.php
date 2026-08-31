@@ -8,6 +8,7 @@ use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TokenCategoryController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WorkerController;
@@ -23,8 +24,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('companies', CompanyController::class)->except('show')->middleware('role:super-admin,administrator');
     Route::resource('agencies', AgencyController::class)->except('show')->middleware('role:super-admin,administrator');
     Route::get('/configuration', [ConfigurationController::class, 'index'])->name('configuration')->middleware('role:super-admin');
-    Route::post('/configuration/categories', [ConfigurationController::class, 'category'])->name('configuration.categories')->middleware('role:super-admin');
     Route::post('/configuration/desks', [ConfigurationController::class, 'desk'])->name('configuration.desks')->middleware('role:super-admin');
+    Route::resource('token-categories', TokenCategoryController::class)->except('show')->middleware('role:super-admin');
     Route::resource('tokens', TokenController::class)->only('index');
     Route::get('/tokens/{token}/modal', [TokenController::class, 'modal'])->name('tokens.modal');
     Route::get('/tokens/{token}/workers/modal', [TokenController::class, 'workersModal'])->name('tokens.workers.modal');

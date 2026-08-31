@@ -90,6 +90,61 @@ class TokenControllerTest extends TestCase
         ]);
     }
 
+    public function test_demand_letter_submission_requires_demanded_workers(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+
+        $response = $this->actingAs($administrator)->post(route('tokens.store'), [
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'received_on' => '2026-08-30',
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+        ]);
+
+        $response->assertSessionHasErrors('demanded_workers');
+        $this->assertDatabaseCount('tokens', 0);
+    }
+
+    public function test_non_demand_letter_category_discards_worker_demand_options(): void
+    {
+        [$administrator, $company, $agency] = $this->createTokenDependencies();
+        $category = TokenCategory::create(['name' => 'Change Pre Worker', 'code' => 'CPA']);
+
+        $response = $this->actingAs($administrator)->post(route('tokens.store'), [
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 60,
+            'pre_selected' => true,
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+        ]);
+
+        $token = Token::sole();
+
+        $response->assertRedirect(route('tokens.show', $token));
+        $this->assertNull($token->demanded_workers);
+        $this->assertFalse($token->pre_selected);
+    }
+
+    public function test_create_form_marks_category_specific_fields_for_dynamic_display(): void
+    {
+        [$administrator] = $this->createTokenDependencies();
+        TokenCategory::create(['name' => 'Change Pre Worker', 'code' => 'CPA', 'display_order' => 2]);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.create'));
+
+        $response->assertSee('data-category-code="DLS"', false);
+        $response->assertSee('data-category-code="CPA"', false);
+        $response->assertSee('id="demandedWorkersGroup" style="display:none"', false);
+        $response->assertSee('id="preSelectedGroup" style="display:none"', false);
+    }
+
     public function test_update_stores_change_reason_only_in_the_audit_log(): void
     {
         [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
@@ -342,6 +397,19 @@ class TokenControllerTest extends TestCase
         ]);
     }
 
+    public function test_token_pdf_displays_the_token_category(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $token = $this->createToken($administrator, $company, $agency, $category);
+
+        $pdfHtml = view('pdf.token', [
+            'token' => $token->load(['company', 'agency', 'category', 'currentHolder']),
+        ])->render();
+
+        $this->assertStringContainsString('Token category', $pdfHtml);
+        $this->assertStringContainsString('Demand Letter Submission', $pdfHtml);
+    }
+
     /**
      * @return array{User, Company, Agency, TokenCategory}
      */
@@ -351,7 +419,7 @@ class TokenControllerTest extends TestCase
         $administrator = User::factory()->create(['role_id' => $role->id]);
         $company = Company::create(['name' => 'Brunei Harbour Services']);
         $agency = Agency::create(['name' => 'Dhaka Workforce Agency']);
-        $category = TokenCategory::create(['name' => 'Demand Letter', 'code' => 'DL']);
+        $category = TokenCategory::create(['name' => 'Demand Letter Submission', 'code' => 'DLS']);
 
         return [$administrator, $company, $agency, $category];
     }

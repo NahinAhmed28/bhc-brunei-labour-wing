@@ -12,8 +12,10 @@
 </div>
 
 @php
-    $vaCategoryIds = $categories->filter(fn($c) => strtoupper($c->code) === 'VA')->pluck('id')->values();
-    $currentCategoryIsVA = $token->exists && $vaCategoryIds->contains($token->token_category_id);
+    $selectedCategoryId = (int) old('token_category_id', $token->token_category_id);
+    $selectedCategory = $categories->firstWhere('id', $selectedCategoryId);
+    $currentCategoryIsDLS = $selectedCategory?->isDemandLetterSubmission() ?? false;
+    $currentCategoryIsVA = $selectedCategory?->isVisaAttestation() ?? false;
 @endphp
 
 <form method="post" action="{{ $token->exists ? route('tokens.update', $token) : route('tokens.store') }}">
@@ -63,7 +65,7 @@
                         <option value="">Select Category</option>
                         @foreach($categories as $x)
                             <option value="{{ $x->id }}"
-                                data-is-va="{{ strtoupper($x->code) === 'VA' ? '1' : '0' }}"
+                                data-category-code="{{ strtoupper($x->code) }}"
                                 @selected(old('token_category_id', $token->token_category_id) == $x->id)>
                                 {{ $x->name }}
                             </option>
@@ -72,8 +74,7 @@
                     @error('token_category_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                 </div>
 
-                {{-- ── boesel-visa process: Demanded Workers (DL categories) ── --}}
-                <div class="col-md-4" id="demandedWorkersGroup" @if($currentCategoryIsVA) style="display:none" @endif>
+                <div class="col-md-4" id="demandedWorkersGroup" @if(!$currentCategoryIsDLS) style="display:none" @endif>
                     <label class="form-label">Demanded Workers *</label>
                     <input class="form-control" type="number" min="1" name="demanded_workers"
                            id="demandedWorkersInput"
@@ -82,7 +83,6 @@
                     @error('demanded_workers') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                 </div>
 
-                {{-- ── boesel-visa process: Required Visa Attestation (VA categories) ── --}}
                 <div class="col-md-4" id="visaAttestationGroup" @if(!$currentCategoryIsVA) style="display:none" @endif>
                     <label class="form-label">Required Visa Attestation *</label>
                     <input class="form-control" type="number" min="1" name="required_visa_attestation"
@@ -104,7 +104,7 @@
                     <input class="form-control" name="agent_name" value="{{ old('agent_name', $token->agent_name) }}">
                 </div>
 
-                <div class="col-md-4 d-flex align-items-end pb-2">
+                <div class="col-md-4 align-items-end pb-2" id="preSelectedGroup" @if($currentCategoryIsDLS) style="display:flex" @else style="display:none" @endif>
                     <div class="form-check form-switch">
                         <input type="hidden" name="pre_selected" value="0">
                         <input class="form-check-input" type="checkbox" name="pre_selected" value="1"
@@ -301,25 +301,34 @@
     var categorySelect = document.getElementById('tokenCategorySelect');
     var dlGroup        = document.getElementById('demandedWorkersGroup');
     var vaGroup        = document.getElementById('visaAttestationGroup');
+    var preGroup       = document.getElementById('preSelectedGroup');
     var dlInput        = document.getElementById('demandedWorkersInput');
     var vaInput        = document.getElementById('visaAttestationInput');
+    var preInput       = document.getElementById('pre');
 
     function applyCategory() {
         var opt   = categorySelect.options[categorySelect.selectedIndex];
-        var isVA  = opt && opt.getAttribute('data-is-va') === '1';
+        var code  = opt ? opt.getAttribute('data-category-code') : '';
+        var isDLS = code === 'DLS';
+        var isVA  = code === 'VA';
 
-        if (isVA) {
-            dlGroup.style.display = 'none';
-            vaGroup.style.display = '';
+        dlGroup.style.display = isDLS ? '' : 'none';
+        preGroup.style.display = isDLS ? 'flex' : 'none';
+        vaGroup.style.display = isVA ? '' : 'none';
+
+        if (isDLS) {
+            dlInput.setAttribute('required', '');
+        } else {
             dlInput.removeAttribute('required');
             dlInput.value = '';
+            preInput.checked = false;
+        }
+
+        if (isVA) {
             vaInput.setAttribute('required', '');
         } else {
-            vaGroup.style.display = 'none';
-            dlGroup.style.display = '';
             vaInput.removeAttribute('required');
             vaInput.value = '';
-            dlInput.setAttribute('required', '');
         }
     }
 

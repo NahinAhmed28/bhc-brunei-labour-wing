@@ -44,26 +44,12 @@ class TokenController extends Controller
     public function store(TokenRequest $r)
     {
         $data = $r->safe()->except(['change_reason']);
-        $data['pre_selected'] = $r->boolean('pre_selected');
         $data['site_visit_required'] = $r->boolean('site_visit_required');
-
-        // --- boesel-visa process: category-conditional field logic ---
-        $category = TokenCategory::find($data['token_category_id']);
-        $isVA = $category && strtoupper($category->code) === 'VA';
-
-        if ($isVA) {
-            // VA category: requires visa-attestation count, not a worker demand
-            if (empty($data['required_visa_attestation'])) {
-                return back()->withErrors(['required_visa_attestation' => 'The required visa attestation field is required for this category.'])->withInput();
-            }
-            $data['demanded_workers'] = null;
-        } else {
-            // All other categories: requires worker demand, not visa attestation
-            if (empty($data['demanded_workers'])) {
-                return back()->withErrors(['demanded_workers' => 'The demanded workers field is required for this category.'])->withInput();
-            }
-            $data['required_visa_attestation'] = null;
-        }
+        $category = TokenCategory::findOrFail($data['token_category_id']);
+        $isVA = $category->isVisaAttestation();
+        $data['pre_selected'] = $category->isDemandLetterSubmission() && $r->boolean('pre_selected');
+        $data['demanded_workers'] = $category->isDemandLetterSubmission() ? $data['demanded_workers'] : null;
+        $data['required_visa_attestation'] = $isVA ? $data['required_visa_attestation'] : null;
 
         $token = DB::transaction(function () use ($r, $data, $category, $isVA) {
             $data['token_number'] = $this->nextNumber($category, $isVA);
@@ -156,27 +142,24 @@ class TokenController extends Controller
             }
         }
 
-        $data['pre_selected'] = $r->boolean('pre_selected');
         $data['site_visit_required'] = $r->boolean('site_visit_required');
 
-        // --- boesel-visa process: category-conditional field logic on update ---
         $categoryId = $data['token_category_id'] ?? $token->token_category_id;
-        $category = TokenCategory::find($categoryId);
-        $isVA = $category && strtoupper($category->code) === 'VA';
+        $category = TokenCategory::findOrFail($categoryId);
+        $isVA = $category->isVisaAttestation();
 
         if ($r->user()->isSuperAdmin()) {
             if ($isVA) {
-                if (empty($data['required_visa_attestation'])) {
-                    return back()->withErrors(['required_visa_attestation' => 'The required visa attestation field is required for this category.'])->withInput();
-                }
                 $data['demanded_workers'] = null;
+            } elseif ($category->isDemandLetterSubmission()) {
+                $data['required_visa_attestation'] = null;
             } else {
-                if (empty($data['demanded_workers'])) {
-                    return back()->withErrors(['demanded_workers' => 'The demanded workers field is required for this category.'])->withInput();
-                }
+                $data['demanded_workers'] = null;
                 $data['required_visa_attestation'] = null;
             }
         }
+
+        $data['pre_selected'] = $category->isDemandLetterSubmission() && $r->boolean('pre_selected');
 
         $old = $token->toArray();
         DB::transaction(function () use ($r, $token, $data, $old, $changeReason) {
@@ -212,7 +195,15 @@ class TokenController extends Controller
 
     private function formData(Token $token): array
     {
-        return ['token' => $token, 'companies' => Company::where('is_active', true)->orderBy('name')->get(), 'agencies' => Agency::where('is_active', true)->orderBy('name')->get(), 'categories' => TokenCategory::where('is_active', true)->orderBy('display_order')->get(), 'users' => User::with('role')->where('is_active', true)->orderBy('name')->get()];
+        $categories = TokenCategory::query()
+            ->where(fn ($query) => $query->where('is_active', true)->when(
+                $token->token_category_id,
+                fn ($categoryQuery, $categoryId) => $categoryQuery->orWhereKey($categoryId),
+            ))
+            ->orderBy('display_order')
+            ->get();
+
+        return ['token' => $token, 'companies' => Company::where('is_active', true)->orderBy('name')->get(), 'agencies' => Agency::where('is_active', true)->orderBy('name')->get(), 'categories' => $categories, 'users' => User::with('role')->where('is_active', true)->orderBy('name')->get()];
     }
 
     /**

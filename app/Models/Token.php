@@ -27,10 +27,14 @@ class Token extends Model
         ];
     }
 
-    /** True when this token belongs to a Visa Attestation category (code = 'VA'). */
     public function isVA(): bool
     {
-        return strtoupper(optional($this->category)->code ?? '') === 'VA';
+        return $this->category?->isVisaAttestation() ?? false;
+    }
+
+    public function isDemandLetterSubmission(): bool
+    {
+        return $this->category?->isDemandLetterSubmission() ?? false;
     }
 
     public function company()
