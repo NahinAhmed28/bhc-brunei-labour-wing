@@ -25,7 +25,7 @@
                             <td><span class="status {{ $category->is_active ? 'status-success' : 'status-danger' }}">{{ $category->is_active ? 'Active' : 'Inactive' }}</span></td>
                             <td class="text-end pe-4">
                                 <a class="btn btn-sm btn-light" href="{{ route('token-categories.edit', $category) }}"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit</a>
-                                @if($category->is_active)
+                                @if($category->is_active && auth()->user()->isSuperAdmin())
                                     <form class="d-inline" method="post" action="{{ route('token-categories.destroy', $category) }}" data-confirm="Deactivate this token category?">
                                         @csrf
                                         @method('delete')

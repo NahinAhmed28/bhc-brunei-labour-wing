@@ -179,6 +179,9 @@
 
 <div class="modal-footer">
     <button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button>
+    <a class="btn btn-outline-primary" href="{{ route('tokens.pdf', $token) }}" target="_blank" rel="noopener">
+        <i class="bi bi-file-pdf me-2" aria-hidden="true"></i>View PDF
+    </a>
     @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
         <a class="btn btn-primary" href="{{ route('tokens.edit', $token) }}"><i class="bi bi-pencil-square me-2" aria-hidden="true"></i>Edit token</a>
     @endif

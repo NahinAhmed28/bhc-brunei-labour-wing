@@ -6,12 +6,14 @@ use App\Models\AuditLog;
 use App\Models\Token;
 use App\Models\User;
 use App\Models\Worker;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(Request $request): View
     {
+        $showRecentActivity = $request->user()->isSuperAdmin();
         $metrics = [
             ['label' => 'Tokens today', 'value' => Token::whereDate('created_at', today())->count(), 'url' => route('tokens.index', ['created' => 'today']), 'icon' => 'calendar-event'],
             ['label' => 'Total tokens', 'value' => Token::count(), 'url' => route('tokens.index'), 'icon' => 'ticket-detailed'],
@@ -26,7 +28,8 @@ class DashboardController extends Controller
         return view('dashboard', [
             'metrics' => $metrics,
             'holderCounts' => User::withCount('heldTokens')->where('is_active', true)->has('heldTokens')->orderBy('name')->get(),
-            'recent' => AuditLog::with('user')->latest()->limit(8)->get(),
+            'showRecentActivity' => $showRecentActivity,
+            'recent' => $showRecentActivity ? AuditLog::with('user')->latest()->limit(8)->get() : collect(),
         ]);
     }
 }

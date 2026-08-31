@@ -81,6 +81,11 @@ class TokenModalTest extends TestCase
         $response->assertSee('action="'.route('tokens.documents.store', $token).'"', false);
         $response->assertSee('src="'.route('documents.preview', $confirmationLetter).'"', false);
         $response->assertSee('src="'.route('documents.preview', $demandLetter).'"', false);
+        $response->assertSee(
+            'href="'.route('tokens.pdf', $token).'" target="_blank" rel="noopener"',
+            false,
+        );
+        $response->assertSeeText('View PDF');
         $response->assertDontSeeText('PDF preview');
     }
 

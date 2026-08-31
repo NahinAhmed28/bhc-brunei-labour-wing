@@ -77,20 +77,41 @@ class TokenCategoryControllerTest extends TestCase
         $this->assertDatabaseHas('token_categories', ['id' => $category->id, 'is_active' => false]);
     }
 
-    public function test_administrator_cannot_manage_token_categories(): void
+    public function test_administrator_navigation_links_to_token_categories(): void
     {
         $administrator = $this->createUser('administrator');
 
-        $this->actingAs($administrator)
-            ->get(route('token-categories.index'))
-            ->assertForbidden();
+        $response = $this->actingAs($administrator)->get(route('token-categories.index'));
 
-        $this->actingAs($administrator)->post(route('token-categories.store'), [
+        $response->assertSee('href="'.route('token-categories.index').'"', false);
+        $response->assertSeeText('Token Categories');
+    }
+
+    public function test_administrator_can_create_a_token_category(): void
+    {
+        $administrator = $this->createUser('administrator');
+
+        $response = $this->actingAs($administrator)->post(route('token-categories.store'), [
             'name' => 'Demand Letter Submission',
             'code' => 'DLS',
-        ])->assertForbidden();
+        ]);
 
-        $this->assertDatabaseCount('token_categories', 0);
+        $response->assertRedirect(route('token-categories.index'));
+        $this->assertDatabaseHas('token_categories', [
+            'name' => 'Demand Letter Submission',
+            'code' => 'DLS',
+        ]);
+    }
+
+    public function test_administrator_cannot_deactivate_a_token_category(): void
+    {
+        $administrator = $this->createUser('administrator');
+        $category = TokenCategory::create(['name' => 'Demand Letter Submission', 'code' => 'DLS']);
+
+        $response = $this->actingAs($administrator)->delete(route('token-categories.destroy', $category));
+
+        $response->assertForbidden();
+        $this->assertTrue($category->fresh()->is_active);
     }
 
     private function createUser(string $roleName): User

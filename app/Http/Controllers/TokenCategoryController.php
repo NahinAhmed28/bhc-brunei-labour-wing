@@ -54,6 +54,8 @@ class TokenCategoryController extends Controller
 
     public function destroy(TokenCategory $tokenCategory): RedirectResponse
     {
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
+
         $old = $tokenCategory->toArray();
         $tokenCategory->update(['is_active' => false]);
         AuditService::record('deactivate', 'token-categories', $tokenCategory, $old, $tokenCategory->fresh()->toArray());

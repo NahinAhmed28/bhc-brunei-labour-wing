@@ -32,7 +32,7 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-xl-7">
+        <div class="{{ $showRecentActivity ? 'col-xl-7' : 'col-12' }}">
             <div class="card">
                 <div class="card-header bg-white py-3"><h2 class="section-title mb-0">File count by user</h2></div>
                 <div class="card-body">
@@ -53,23 +53,25 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-5">
-            <div class="card">
-                <div class="card-header bg-white py-3"><h2 class="section-title mb-0">Recent activity</h2></div>
-                <div class="list-group list-group-flush">
-                    @forelse($recent as $log)
-                        <div class="list-group-item px-4 py-3">
-                            <div class="d-flex justify-content-between gap-2">
-                                <strong class="small">{{ ucfirst($log->action) }} · {{ str_replace('-', ' ', $log->module) }}</strong>
-                                <span class="text-secondary small">{{ $log->created_at->diffForHumans() }}</span>
+        @if($showRecentActivity)
+            <div class="col-xl-5">
+                <div class="card">
+                    <div class="card-header bg-white py-3"><h2 class="section-title mb-0">Recent activity</h2></div>
+                    <div class="list-group list-group-flush">
+                        @forelse($recent as $log)
+                            <div class="list-group-item px-4 py-3">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <strong class="small">{{ ucfirst($log->action) }} · {{ str_replace('-', ' ', $log->module) }}</strong>
+                                    <span class="text-secondary small">{{ $log->created_at->diffForHumans() }}</span>
+                                </div>
+                                <div class="text-secondary small mt-1">{{ $log->user?->name ?? 'System' }}</div>
                             </div>
-                            <div class="text-secondary small mt-1">{{ $log->user?->name ?? 'System' }}</div>
-                        </div>
-                    @empty
-                        <div class="p-4 text-secondary">No activity recorded yet.</div>
-                    @endforelse
+                        @empty
+                            <div class="p-4 text-secondary">No activity recorded yet.</div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
     </div>
 @endsection

@@ -70,12 +70,12 @@
                         <span class="nav-link-icon"><i class="bi bi-briefcase" aria-hidden="true"></i></span>
                         <span class="nav-link-copy"><strong>Agencies</strong><small>Recruiter directory</small></span>
                     </a>
-                @endif
-                @if(auth()->user()->isSuperAdmin())
                     <a class="nav-link {{ request()->routeIs('token-categories.*') ? 'active' : '' }}" href="{{ route('token-categories.index') }}">
                         <span class="nav-link-icon"><i class="bi bi-tags" aria-hidden="true"></i></span>
                         <span class="nav-link-copy"><strong>Token Categories</strong><small>Submission types</small></span>
                     </a>
+                @endif
+                @if(auth()->user()->isSuperAdmin())
                     <a class="nav-link {{ request()->routeIs('configuration') ? 'active' : '' }}" href="{{ route('configuration') }}">
                         <span class="nav-link-icon"><i class="bi bi-sliders" aria-hidden="true"></i></span>
                         <span class="nav-link-copy"><strong>Configuration</strong><small>System controls</small></span>

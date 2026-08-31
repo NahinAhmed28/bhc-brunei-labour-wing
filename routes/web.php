@@ -25,7 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('agencies', AgencyController::class)->except('show')->middleware('role:super-admin,administrator');
     Route::get('/configuration', [ConfigurationController::class, 'index'])->name('configuration')->middleware('role:super-admin');
     Route::post('/configuration/desks', [ConfigurationController::class, 'desk'])->name('configuration.desks')->middleware('role:super-admin');
-    Route::resource('token-categories', TokenCategoryController::class)->except('show')->middleware('role:super-admin');
+    Route::resource('token-categories', TokenCategoryController::class)->except('show')->middleware('role:super-admin,administrator');
     Route::resource('tokens', TokenController::class)->only('index');
     Route::get('/tokens/{token}/modal', [TokenController::class, 'modal'])->name('tokens.modal');
     Route::get('/tokens/{token}/workers/modal', [TokenController::class, 'workersModal'])->name('tokens.workers.modal');

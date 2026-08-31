@@ -9,7 +9,7 @@ class TokenCategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isSuperAdmin() ?? false;
+        return $this->user()?->hasAnyRole('super-admin', 'administrator') ?? false;
     }
 
     /**

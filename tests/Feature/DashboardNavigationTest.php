@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Agency;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Role;
 use App\Models\Token;
 use App\Models\TokenCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class DashboardNavigationTest extends TestCase
@@ -30,6 +32,7 @@ class DashboardNavigationTest extends TestCase
         $response->assertSee('href="'.route('workers.index', ['flight_status' => 'pending']).'"', false);
         $response->assertSee('href="'.route('tokens.index').'"', false);
         $response->assertSee('href="'.route('workers.index').'"', false);
+        $response->assertSee('href="'.route('token-categories.index').'"', false);
         $response->assertSeeText('Workers');
         $response->assertDontSeeText('Applications');
         $response->assertSee('class="sidebar-navigation"', false);
@@ -41,6 +44,49 @@ class DashboardNavigationTest extends TestCase
         $response->assertSee('aria-controls="primary-sidebar"', false);
         $response->assertSee('data-sidebar-dismiss', false);
         $response->assertDontSee('class="btn btn-light d-lg-none" data-sidebar-toggle', false);
+    }
+
+    public function test_super_administrator_dashboard_displays_recent_activity(): void
+    {
+        $role = Role::create(['name' => 'super-admin', 'label' => 'Super Administrator']);
+        $superAdministrator = User::factory()->create(['role_id' => $role->id]);
+        AuditLog::create([
+            'user_id' => $superAdministrator->id,
+            'action' => 'reviewed',
+            'module' => 'confidential-records',
+        ]);
+
+        $response = $this->actingAs($superAdministrator)->get(route('dashboard'));
+
+        $response->assertSeeText('Recent activity');
+        $response->assertSeeText('Reviewed · confidential records');
+    }
+
+    #[DataProvider('nonSuperAdministratorRoles')]
+    public function test_non_super_administrator_dashboard_hides_recent_activity(string $roleName): void
+    {
+        $role = Role::create(['name' => $roleName, 'label' => ucwords(str_replace('-', ' ', $roleName))]);
+        $user = User::factory()->create(['role_id' => $role->id]);
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'reviewed',
+            'module' => 'confidential-records',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertDontSeeText('Recent activity');
+        $response->assertDontSeeText('Confidential records');
+        $response->assertSee('class="col-12"', false);
+    }
+
+    public static function nonSuperAdministratorRoles(): array
+    {
+        return [
+            'administrator' => ['administrator'],
+            'data entry' => ['data-entry'],
+            'viewer' => ['viewer'],
+        ];
     }
 
     public function test_dashboard_only_lists_users_with_assigned_tokens(): void
