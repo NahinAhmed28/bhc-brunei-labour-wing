@@ -25,7 +25,7 @@ class TokenControllerTest extends TestCase
         $response->assertOk();
         $response->assertSeeText('Create Token');
         $response->assertSee('action="'.route('tokens.store').'"', false);
-        $response->assertSee('value="'.$administrator->name.'" disabled', false);
+        $response->assertSee('value="'.e($administrator->name).'" disabled', false);
         $response->assertSeeText('The file is initially assigned to the user creating it.');
         $response->assertDontSee('name="current_holder_id"', false);
     }
@@ -141,8 +141,9 @@ class TokenControllerTest extends TestCase
 
         $response->assertSee('data-category-code="DLS"', false);
         $response->assertSee('data-category-code="CPA"', false);
-        $response->assertSee('id="demandedWorkersGroup" style="display:none"', false);
-        $response->assertSee('id="preSelectedGroup" style="display:none"', false);
+        $response->assertSee('id="demandedWorkersGroup"', false);
+        $response->assertSee('id="preSelectedGroup"', false);
+        $response->assertSee("var isDLS = code === 'DLS';", false);
     }
 
     public function test_update_stores_change_reason_only_in_the_audit_log(): void
