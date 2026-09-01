@@ -90,7 +90,10 @@ class TokenModalTest extends TestCase
         $response->assertSeeText('Record information');
         $response->assertDontSeeText('Amount');
         $response->assertDontSeeText('Receipt number');
-        $response->assertSee('action="'.route('tokens.documents.store', $token).'"', false);
+        $response->assertDontSee('enctype="multipart/form-data"', false);
+        $response->assertDontSee('type="file"', false);
+        $response->assertDontSee('action="'.route('tokens.documents.store', $token).'"', false);
+        $response->assertDontSee('action="'.route('tokens.documents.update', [$token, $confirmationLetter]).'"', false);
         $response->assertSee('src="'.route('documents.preview', $confirmationLetter).'"', false);
         $response->assertSee('src="'.route('documents.preview', $secondConfirmationLetter).'"', false);
         $response->assertSee('src="'.route('documents.preview', $demandLetter).'"', false);

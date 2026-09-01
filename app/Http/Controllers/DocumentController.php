@@ -9,8 +9,10 @@ use App\Models\Worker;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
@@ -30,24 +32,39 @@ class DocumentController extends Controller
     public function storeToken(StoreTokenDocumentRequest $request, Token $token): RedirectResponse
     {
         $data = $request->validated();
-        $file = $request->file('file');
-        $path = $file->store('documents/tokens/'.$token->id, 'local');
+        $document = DB::transaction(function () use ($data, $request, $token): Document {
+            Token::query()->whereKey($token->getKey())->lockForUpdate()->firstOrFail();
 
-        if ($path === false) {
-            return back()->withErrors(['file' => 'The file could not be stored. Try again.']);
-        }
+            if ($data['type'] === 'demand-letter' && $token->documents()
+                ->whereNull('worker_id')
+                ->where('type', 'demand-letter')
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    'file' => 'This token already has a demand letter. Upload a new version of the existing letter instead.',
+                ]);
+            }
 
-        $document = Document::create([
-            'token_id' => $token->id,
-            'type' => $data['type'],
-            'collection_key' => (string) Str::uuid(),
-            'version' => 1,
-            'original_name' => $file->getClientOriginalName(),
-            'path' => $path,
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'uploaded_by' => $request->user()->id,
-        ]);
+            $file = $request->file('file');
+            $path = $file->store('documents/tokens/'.$token->id, 'local');
+
+            if ($path === false) {
+                throw ValidationException::withMessages([
+                    'file' => 'The file could not be stored. Try again.',
+                ]);
+            }
+
+            return Document::create([
+                'token_id' => $token->id,
+                'type' => $data['type'],
+                'collection_key' => (string) Str::uuid(),
+                'version' => 1,
+                'original_name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'uploaded_by' => $request->user()->id,
+            ]);
+        });
         AuditService::record('upload-document', 'documents', $document);
 
         return back()->with('success', ucwords(str_replace('-', ' ', $data['type'])).' uploaded.');

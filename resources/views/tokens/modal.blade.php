@@ -124,7 +124,7 @@
             <div class="token-document-pane-header">
                 <span class="detail-label">Official attachments</span>
                 <strong>Confirmation and demand letters</strong>
-                <p class="mb-0">Each letter can be previewed and updated independently.</p>
+                <p class="mb-0">Preview or download the letters attached to this token.</p>
             </div>
 
             @foreach(['confirmation-letter' => 'Confirmation Letter', 'demand-letter' => 'Demand Letter'] as $type => $label)
@@ -141,19 +141,6 @@
                                 <i class="bi bi-download me-1" aria-hidden="true"></i>Download
                             </a>
                         </div>
-
-                        @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
-                            <form class="token-document-upload" method="post" enctype="multipart/form-data"
-                                  action="{{ route('tokens.documents.update', [$token, $document]) }}">
-                                @csrf
-                                @method('put')
-                                <input type="hidden" name="type" value="{{ $type }}">
-                                <input class="form-control form-control-sm" type="file" name="file"
-                                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                                       aria-label="Upload a new version of {{ $document->original_name }}" required>
-                                <button class="btn btn-sm btn-outline-primary" type="submit">Upload new version</button>
-                            </form>
-                        @endif
 
                         <div class="token-document-preview">
                             @if(str_starts_with($document->mime_type, 'image/'))
@@ -173,20 +160,6 @@
                     </section>
                 @endforelse
 
-                @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
-                    <section class="token-document-slot">
-                        <h3 class="h6">Add another {{ strtolower($label) }}</h3>
-                        <form class="token-document-upload" method="post" enctype="multipart/form-data"
-                              action="{{ route('tokens.documents.store', $token) }}">
-                            @csrf
-                            <input type="hidden" name="type" value="{{ $type }}">
-                            <input class="form-control form-control-sm" type="file" name="file"
-                                   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                                   aria-label="Add another {{ strtolower($label) }}" required>
-                            <button class="btn btn-sm btn-outline-primary" type="submit">Add letter</button>
-                        </form>
-                    </section>
-                @endif
             @endforeach
         </aside>
     </div>

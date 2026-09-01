@@ -247,7 +247,7 @@
                     @php($documents = $tokenDocuments->get($type, collect()))
                     <div class="col-lg-6">
                         <div class="border rounded-3 p-3 h-100">
-                            <h3 class="h6 mb-3">{{ $label }}s</h3>
+                            <h3 class="h6 mb-3">{{ $type === 'confirmation-letter' ? 'Confirmation Letters' : 'Demand Letter' }}</h3>
 
                             @forelse($documents as $document)
                                 <div class="border rounded-3 p-3 mb-3">
@@ -277,21 +277,42 @@
                                 <p class="small text-secondary">No file uploaded yet.</p>
                             @endforelse
 
-                            <form method="post" enctype="multipart/form-data" action="{{ route('tokens.documents.store', $token) }}">
-                                @csrf
-                                <input type="hidden" name="type" value="{{ $type }}">
-                                <label class="form-label" for="{{ $type }}-file">Add another {{ strtolower($label) }}</label>
-                                <div class="input-group">
-                                    <input class="form-control" id="{{ $type }}-file" type="file" name="file"
-                                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
-                                    <button class="btn btn-outline-primary" type="submit">
-                                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add
-                                    </button>
+                            @if($type === 'confirmation-letter')
+                                <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#add-confirmation-letter" aria-expanded="{{ old('type') === $type && $errors->has('file') ? 'true' : 'false' }}"
+                                    aria-controls="add-confirmation-letter">
+                                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add another confirmation letter
+                                </button>
+                                <div class="collapse mt-3{{ old('type') === $type && $errors->has('file') ? ' show' : '' }}" id="add-confirmation-letter">
+                                    <form method="post" enctype="multipart/form-data" action="{{ route('tokens.documents.store', $token) }}">
+                                        @csrf
+                                        <input type="hidden" name="type" value="{{ $type }}">
+                                        <label class="form-label" for="{{ $type }}-file">Confirmation letter file</label>
+                                        <div class="input-group">
+                                            <input class="form-control" id="{{ $type }}-file" type="file" name="file"
+                                                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
+                                            <button class="btn btn-outline-primary" type="submit">Save letter</button>
+                                        </div>
+                                        @if(old('type') === $type)
+                                            @error('file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                        @endif
+                                    </form>
                                 </div>
-                                @if(old('type') === $type)
-                                    @error('file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                                @endif
-                            </form>
+                            @elseif($documents->isEmpty())
+                                <form method="post" enctype="multipart/form-data" action="{{ route('tokens.documents.store', $token) }}">
+                                    @csrf
+                                    <input type="hidden" name="type" value="{{ $type }}">
+                                    <label class="form-label" for="{{ $type }}-file">Demand letter file</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="{{ $type }}-file" type="file" name="file"
+                                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
+                                        <button class="btn btn-outline-primary" type="submit">Save letter</button>
+                                    </div>
+                                    @if(old('type') === $type)
+                                        @error('file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                    @endif
+                                </form>
+                            @endif
                         </div>
                     </div>
                 @endforeach
