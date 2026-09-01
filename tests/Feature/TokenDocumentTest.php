@@ -45,6 +45,7 @@ class TokenDocumentTest extends TestCase
             'original_name' => $filename,
             'uploaded_by' => $administrator->id,
         ]);
+        $this->assertNotNull($document->collection_key);
         $this->assertDatabaseHas('audit_logs', [
             'module' => 'documents',
             'record_id' => (string) $document->id,
@@ -68,17 +69,29 @@ class TokenDocumentTest extends TestCase
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
-    public function test_token_edit_page_renders_letter_uploads_and_the_latest_preview(): void
+    public function test_token_edit_page_renders_multiple_letters_and_their_latest_previews(): void
     {
         [$administrator, $token] = $this->createToken('administrator');
         $confirmationLetter = Document::create([
             'token_id' => $token->id,
             'type' => 'confirmation-letter',
+            'collection_key' => '11111111-1111-4111-8111-111111111111',
             'version' => 2,
             'original_name' => 'confirmation-v2.pdf',
             'path' => 'documents/tokens/'.$token->id.'/confirmation-v2.pdf',
             'mime_type' => 'application/pdf',
             'size' => 1024,
+            'uploaded_by' => $administrator->id,
+        ]);
+        $secondConfirmationLetter = Document::create([
+            'token_id' => $token->id,
+            'type' => 'confirmation-letter',
+            'collection_key' => '22222222-2222-4222-8222-222222222222',
+            'version' => 1,
+            'original_name' => 'second-confirmation.pdf',
+            'path' => 'documents/tokens/'.$token->id.'/second-confirmation.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 2048,
             'uploaded_by' => $administrator->id,
         ]);
 
@@ -90,16 +103,18 @@ class TokenDocumentTest extends TestCase
         $response->assertSee('name="type" value="confirmation-letter"', false);
         $response->assertSee('name="type" value="demand-letter"', false);
         $response->assertSee('href="'.route('documents.preview', $confirmationLetter).'"', false);
-        $response->assertSeeText('Preview v2');
+        $response->assertSee('href="'.route('documents.preview', $secondConfirmationLetter).'"', false);
+        $response->assertSeeText('second-confirmation.pdf');
     }
 
-    public function test_uploading_an_existing_letter_type_creates_a_new_version(): void
+    public function test_uploading_an_existing_letter_type_creates_another_letter(): void
     {
         Storage::fake('local');
         [$administrator, $token] = $this->createToken('administrator');
-        Document::create([
+        $existingDocument = Document::create([
             'token_id' => $token->id,
             'type' => 'confirmation-letter',
+            'collection_key' => '11111111-1111-4111-8111-111111111111',
             'version' => 1,
             'original_name' => 'old-confirmation.pdf',
             'path' => 'documents/tokens/'.$token->id.'/old-confirmation.pdf',
@@ -116,12 +131,58 @@ class TokenDocumentTest extends TestCase
             ]);
 
         $response->assertRedirect(route('tokens.index'));
+        $newDocument = Document::whereKeyNot($existingDocument->id)->sole();
         $this->assertDatabaseHas('documents', [
+            'id' => $newDocument->id,
             'token_id' => $token->id,
             'type' => 'confirmation-letter',
-            'version' => 2,
+            'version' => 1,
             'original_name' => 'new-confirmation.pdf',
         ]);
+        $this->assertNotSame($existingDocument->collection_key, $newDocument->collection_key);
+    }
+
+    public function test_updating_one_confirmation_letter_creates_a_new_version_for_only_that_letter(): void
+    {
+        Storage::fake('local');
+        [$administrator, $token] = $this->createToken('administrator');
+        $document = Document::create([
+            'token_id' => $token->id,
+            'type' => 'confirmation-letter',
+            'collection_key' => '11111111-1111-4111-8111-111111111111',
+            'version' => 1,
+            'original_name' => 'first-confirmation.pdf',
+            'path' => 'documents/tokens/'.$token->id.'/first-confirmation.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+            'uploaded_by' => $administrator->id,
+        ]);
+        Document::create([
+            'token_id' => $token->id,
+            'type' => 'confirmation-letter',
+            'collection_key' => '22222222-2222-4222-8222-222222222222',
+            'version' => 1,
+            'original_name' => 'second-confirmation.pdf',
+            'path' => 'documents/tokens/'.$token->id.'/second-confirmation.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+            'uploaded_by' => $administrator->id,
+        ]);
+
+        $response = $this->actingAs($administrator)
+            ->put(route('tokens.documents.update', [$token, $document]), [
+                'type' => 'confirmation-letter',
+                'file' => UploadedFile::fake()->create('first-confirmation-v2.pdf', 100, 'application/pdf'),
+            ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('documents', [
+            'token_id' => $token->id,
+            'collection_key' => $document->collection_key,
+            'version' => 2,
+            'original_name' => 'first-confirmation-v2.pdf',
+        ]);
+        $this->assertSame(1, Document::where('collection_key', '22222222-2222-4222-8222-222222222222')->count());
     }
 
     public function test_data_entry_user_cannot_upload_token_documents(): void

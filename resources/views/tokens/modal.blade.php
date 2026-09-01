@@ -124,39 +124,37 @@
             <div class="token-document-pane-header">
                 <span class="detail-label">Official attachments</span>
                 <strong>Confirmation and demand letters</strong>
-                <p class="mb-0">The latest uploaded version of each letter appears below.</p>
+                <p class="mb-0">Each letter can be previewed and updated independently.</p>
             </div>
 
             @foreach(['confirmation-letter' => 'Confirmation Letter', 'demand-letter' => 'Demand Letter'] as $type => $label)
-                @php($document = $tokenDocuments->get($type))
-                <section class="token-document-slot">
-                    <div class="token-document-slot-header">
-                        <div>
-                            <span class="token-document-kicker">{{ $document ? 'Version '.$document->version : 'Required file' }}</span>
-                            <h3>{{ $label }}</h3>
-                        </div>
-                        @if($document)
+                @php($documents = $tokenDocuments->get($type, collect()))
+
+                @forelse($documents as $document)
+                    <section class="token-document-slot">
+                        <div class="token-document-slot-header">
+                            <div>
+                                <span class="token-document-kicker">Version {{ $document->version }}</span>
+                                <h3>{{ $label }}</h3>
+                            </div>
                             <a class="btn btn-sm btn-light" href="{{ route('documents.download', $document) }}">
                                 <i class="bi bi-download me-1" aria-hidden="true"></i>Download
                             </a>
+                        </div>
+
+                        @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
+                            <form class="token-document-upload" method="post" enctype="multipart/form-data"
+                                  action="{{ route('tokens.documents.update', [$token, $document]) }}">
+                                @csrf
+                                @method('put')
+                                <input type="hidden" name="type" value="{{ $type }}">
+                                <input class="form-control form-control-sm" type="file" name="file"
+                                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                       aria-label="Upload a new version of {{ $document->original_name }}" required>
+                                <button class="btn btn-sm btn-outline-primary" type="submit">Upload new version</button>
+                            </form>
                         @endif
-                    </div>
 
-                    @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
-                        <form class="token-document-upload" method="post" enctype="multipart/form-data"
-                              action="{{ route('tokens.documents.store', $token) }}">
-                            @csrf
-                            <input type="hidden" name="type" value="{{ $type }}">
-                            <input class="form-control form-control-sm" type="file" name="file"
-                                   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                                   aria-label="Upload {{ strtolower($label) }}" required>
-                            <button class="btn btn-sm btn-outline-primary" type="submit">
-                                {{ $document ? 'Upload new version' : 'Upload file' }}
-                            </button>
-                        </form>
-                    @endif
-
-                    @if($document)
                         <div class="token-document-preview">
                             @if(str_starts_with($document->mime_type, 'image/'))
                                 <img src="{{ route('documents.preview', $document) }}" alt="Preview of {{ $label }} for {{ $token->token_number }}">
@@ -165,13 +163,30 @@
                             @endif
                         </div>
                         <p class="token-document-filename mb-0">{{ $document->original_name }} · {{ number_format($document->size / 1024, 1) }} KB</p>
-                    @else
+                    </section>
+                @empty
+                    <section class="token-document-slot">
                         <div class="token-document-empty">
                             <i class="bi bi-file-earmark-arrow-up" aria-hidden="true"></i>
                             <p class="mb-0">No {{ strtolower($label) }} has been uploaded.</p>
                         </div>
-                    @endif
-                </section>
+                    </section>
+                @endforelse
+
+                @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
+                    <section class="token-document-slot">
+                        <h3 class="h6">Add another {{ strtolower($label) }}</h3>
+                        <form class="token-document-upload" method="post" enctype="multipart/form-data"
+                              action="{{ route('tokens.documents.store', $token) }}">
+                            @csrf
+                            <input type="hidden" name="type" value="{{ $type }}">
+                            <input class="form-control form-control-sm" type="file" name="file"
+                                   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                   aria-label="Add another {{ strtolower($label) }}" required>
+                            <button class="btn btn-sm btn-outline-primary" type="submit">Add letter</button>
+                        </form>
+                    </section>
+                @endif
             @endforeach
         </aside>
     </div>

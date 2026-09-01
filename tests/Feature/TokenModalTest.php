@@ -45,9 +45,21 @@ class TokenModalTest extends TestCase
         $confirmationLetter = Document::create([
             'token_id' => $token->id,
             'type' => 'confirmation-letter',
+            'collection_key' => '11111111-1111-4111-8111-111111111111',
             'version' => 1,
             'original_name' => 'confirmation.pdf',
             'path' => 'documents/tokens/'.$token->id.'/confirmation.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+            'uploaded_by' => $administrator->id,
+        ]);
+        $secondConfirmationLetter = Document::create([
+            'token_id' => $token->id,
+            'type' => 'confirmation-letter',
+            'collection_key' => '22222222-2222-4222-8222-222222222222',
+            'version' => 1,
+            'original_name' => 'second-confirmation.pdf',
+            'path' => 'documents/tokens/'.$token->id.'/second-confirmation.pdf',
             'mime_type' => 'application/pdf',
             'size' => 1024,
             'uploaded_by' => $administrator->id,
@@ -80,6 +92,7 @@ class TokenModalTest extends TestCase
         $response->assertDontSeeText('Receipt number');
         $response->assertSee('action="'.route('tokens.documents.store', $token).'"', false);
         $response->assertSee('src="'.route('documents.preview', $confirmationLetter).'"', false);
+        $response->assertSee('src="'.route('documents.preview', $secondConfirmationLetter).'"', false);
         $response->assertSee('src="'.route('documents.preview', $demandLetter).'"', false);
         $response->assertSee(
             'href="'.route('tokens.pdf', $token).'" target="_blank" rel="noopener"',

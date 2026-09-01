@@ -75,35 +75,18 @@ class TokenSeeder extends Seeder
                 return $record;
             }, $records);
 
-            Token::upsert(
-                $tokens,
-                ['token_number'],
-                [
-                    'token_category_id',
-                    'company_id',
-                    'agency_id',
-                    'current_holder_id',
-                    'received_on',
-                    'demanded_workers',
-                    'required_visa_attestation',
-                    'approved_workers',
-                    'pre_selected',
-                    'bhc_number',
-                    'boesl_status',
-                    'boesl_date',
-                    'received_by',
-                    'site_visit_required',
-                    'site_visit_date',
-                    'site_visit_by',
-                    'visa_status',
-                    'file_status',
-                    'remarks',
-                    'created_by',
-                    'updated_by',
-                    'updated_at',
-                    'deleted_at',
-                ],
-            );
+            foreach ($tokens as $token) {
+                Token::updateOrCreate(
+                    [
+                        'token_number' => $token['token_number'],
+                        'token_category_id' => $token['token_category_id'],
+                        'company_id' => $token['company_id'],
+                        'agency_id' => $token['agency_id'],
+                        'received_on' => $token['received_on'],
+                    ],
+                    $token,
+                );
+            }
         }
     }
 

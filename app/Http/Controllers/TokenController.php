@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class TokenController extends Controller
@@ -44,6 +45,8 @@ class TokenController extends Controller
     public function store(TokenRequest $r)
     {
         $data = $r->safe()->except(['change_reason']);
+        $requestedTokenNumber = trim((string) ($data['token_number'] ?? ''));
+        unset($data['token_number']);
         $data['site_visit_required'] = $r->boolean('site_visit_required');
         $category = TokenCategory::findOrFail($data['token_category_id']);
         $isVA = $category->isVisaAttestation();
@@ -51,8 +54,10 @@ class TokenController extends Controller
         $data['demanded_workers'] = $category->isDemandLetterSubmission() ? $data['demanded_workers'] : null;
         $data['required_visa_attestation'] = $isVA ? $data['required_visa_attestation'] : null;
 
-        $token = DB::transaction(function () use ($r, $data, $category, $isVA) {
-            $data['token_number'] = $this->nextNumber($category, $isVA);
+        $token = DB::transaction(function () use ($r, $data, $category, $isVA, $requestedTokenNumber) {
+            $data['token_number'] = $requestedTokenNumber !== ''
+                ? $requestedTokenNumber
+                : $this->nextNumber($category, $isVA);
             $data['created_by'] = $r->user()->id;
             $data['updated_by'] = $r->user()->id;
             $data['received_by'] = $r->user()->name;
@@ -96,7 +101,7 @@ class TokenController extends Controller
                 ->orderByDesc('id'),
         ]);
 
-        $tokenDocuments = $token->documents->unique('type')->keyBy('type');
+        $tokenDocuments = $this->latestTokenDocumentCollections($token->documents);
 
         return view('tokens.modal', compact('token', 'tokenDocuments'));
     }
@@ -115,14 +120,12 @@ class TokenController extends Controller
     public function edit(Token $token)
     {
         $token->load(['transferHistories.previousHolder', 'transferHistories.newHolder', 'transferHistories.transferredBy']);
-        $tokenDocuments = $token->documents()
+        $tokenDocuments = $this->latestTokenDocumentCollections($token->documents()
             ->whereNull('worker_id')
             ->whereIn('type', ['confirmation-letter', 'demand-letter'])
             ->orderByDesc('version')
             ->orderByDesc('id')
-            ->get()
-            ->unique('type')
-            ->keyBy('type');
+            ->get());
 
         return view('tokens.form', $this->formData($token) + compact('tokenDocuments'));
     }
@@ -130,8 +133,11 @@ class TokenController extends Controller
     public function update(TokenRequest $r, Token $token)
     {
         $data = $r->safe()->except(['change_reason']);
+        if (trim((string) ($data['token_number'] ?? '')) === '') {
+            unset($data['token_number']);
+        }
         $changeReason = $r->validated('change_reason');
-        $protected = ['company_id', 'agency_id', 'demanded_workers', 'required_visa_attestation'];
+        $protected = ['token_number', 'company_id', 'agency_id', 'demanded_workers', 'required_visa_attestation'];
         if (! $r->user()->isSuperAdmin()) {
             $data = Arr::except($data, $protected);
         } else {
@@ -218,5 +224,14 @@ class TokenController extends Controller
         $seq = $last ? ((int) substr($last, -5) + 1) : 1;
 
         return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+    }
+
+    private function latestTokenDocumentCollections(Collection $documents): Collection
+    {
+        return $documents
+            ->groupBy('type')
+            ->map(fn (Collection $typeDocuments) => $typeDocuments
+                ->unique('collection_key')
+                ->values());
     }
 }

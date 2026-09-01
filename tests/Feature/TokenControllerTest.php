@@ -64,6 +64,27 @@ class TokenControllerTest extends TestCase
         ]);
     }
 
+    public function test_reference_number_can_be_reused_for_multiple_tokens(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $tokenData = [
+            'token_number' => 'SHARED-REFERENCE-100',
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 60,
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+        ];
+
+        $this->actingAs($administrator)->post(route('tokens.store'), $tokenData)->assertRedirect();
+        $this->actingAs($administrator)->post(route('tokens.store'), $tokenData)->assertRedirect();
+
+        $this->assertSame(2, Token::where('token_number', 'SHARED-REFERENCE-100')->count());
+    }
+
     public function test_create_does_not_persist_change_reason_as_a_token_attribute(): void
     {
         [$administrator, $company, $agency, $category] = $this->createTokenDependencies();

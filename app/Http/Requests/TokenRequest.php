@@ -20,6 +20,7 @@ class TokenRequest extends FormRequest
         $isVisaAttestation = $category?->isVisaAttestation() ?? false;
 
         return [
+            'token_number' => 'nullable|string|max:255',
             'company_id' => 'required|exists:companies,id',
             'agency_id' => 'required|exists:agencies,id',
             'token_category_id' => 'required|exists:token_categories,id',

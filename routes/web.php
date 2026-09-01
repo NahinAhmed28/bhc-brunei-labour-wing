@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('tokens', TokenController::class)->only('create', 'store', 'edit', 'update');
         Route::post('/tokens/{token}/cancel', [TokenController::class, 'cancel'])->name('tokens.cancel');
         Route::post('/tokens/{token}/documents', [DocumentController::class, 'storeToken'])->name('tokens.documents.store');
+        Route::put('/tokens/{token}/documents/{document}', [DocumentController::class, 'updateToken'])->name('tokens.documents.update');
     });
     Route::resource('tokens', TokenController::class)->only('show');
     Route::resource('workers', WorkerController::class)->only('index');

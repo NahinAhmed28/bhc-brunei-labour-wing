@@ -30,6 +30,16 @@
             <div class="row g-3">
 
                 <div class="col-md-4">
+                    <label class="form-label">Reference No.</label>
+                    <input class="form-control" name="token_number" value="{{ old('token_number', $token->token_number) }}"
+                        @readonly($token->exists && !auth()->user()->isSuperAdmin())>
+                    @unless($token->exists)
+                        <div class="form-text">Leave blank to generate the next reference automatically. Existing reference numbers may be reused.</div>
+                    @endunless
+                    @error('token_number') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="col-md-4">
                     <label class="form-label">Company Name *</label>
                     <select class="form-select" name="company_id" required
                         @disabled($token->exists && !auth()->user()->isSuperAdmin())>
@@ -234,32 +244,48 @@
         <div class="card-body p-4">
             <div class="row g-4">
                 @foreach(['confirmation-letter' => 'Confirmation Letter', 'demand-letter' => 'Demand Letter'] as $type => $label)
-                    @php($document = $tokenDocuments->get($type))
+                    @php($documents = $tokenDocuments->get($type, collect()))
                     <div class="col-lg-6">
                         <div class="border rounded-3 p-3 h-100">
-                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
-                                <div>
-                                    <h3 class="h6 mb-1">{{ $label }}</h3>
-                                    <p class="small text-secondary mb-0">
-                                        {{ $document ? $document->original_name : 'No file uploaded yet.' }}
-                                    </p>
+                            <h3 class="h6 mb-3">{{ $label }}s</h3>
+
+                            @forelse($documents as $document)
+                                <div class="border rounded-3 p-3 mb-3">
+                                    <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                                        <div>
+                                            <strong>{{ $document->original_name }}</strong>
+                                            <div class="small text-secondary">Version {{ $document->version }}</div>
+                                        </div>
+                                        <a class="btn btn-sm btn-light" href="{{ route('documents.preview', $document) }}" target="_blank" rel="noopener">
+                                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Preview
+                                        </a>
+                                    </div>
+
+                                    <form method="post" enctype="multipart/form-data" action="{{ route('tokens.documents.update', [$token, $document]) }}">
+                                        @csrf
+                                        @method('put')
+                                        <input type="hidden" name="type" value="{{ $type }}">
+                                        <label class="form-label" for="{{ $type }}-{{ $document->id }}-file">Upload a new version</label>
+                                        <div class="input-group">
+                                            <input class="form-control" id="{{ $type }}-{{ $document->id }}-file" type="file" name="file"
+                                                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
+                                            <button class="btn btn-outline-primary" type="submit">Update</button>
+                                        </div>
+                                    </form>
                                 </div>
-                                @if($document)
-                                    <a class="btn btn-sm btn-light" href="{{ route('documents.preview', $document) }}" target="_blank" rel="noopener">
-                                        <i class="bi bi-eye me-1" aria-hidden="true"></i>Preview v{{ $document->version }}
-                                    </a>
-                                @endif
-                            </div>
+                            @empty
+                                <p class="small text-secondary">No file uploaded yet.</p>
+                            @endforelse
 
                             <form method="post" enctype="multipart/form-data" action="{{ route('tokens.documents.store', $token) }}">
                                 @csrf
                                 <input type="hidden" name="type" value="{{ $type }}">
-                                <label class="form-label" for="{{ $type }}-file">{{ $document ? 'Upload a new version' : 'Choose a file' }}</label>
+                                <label class="form-label" for="{{ $type }}-file">Add another {{ strtolower($label) }}</label>
                                 <div class="input-group">
                                     <input class="form-control" id="{{ $type }}-file" type="file" name="file"
                                         accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
                                     <button class="btn btn-outline-primary" type="submit">
-                                        <i class="bi bi-upload me-1" aria-hidden="true"></i>Upload
+                                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add
                                     </button>
                                 </div>
                                 @if(old('type') === $type)

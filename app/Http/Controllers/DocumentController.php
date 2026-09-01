@@ -10,6 +10,7 @@ use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
@@ -30,10 +31,6 @@ class DocumentController extends Controller
     {
         $data = $request->validated();
         $file = $request->file('file');
-        $version = (Document::where('token_id', $token->id)
-            ->whereNull('worker_id')
-            ->where('type', $data['type'])
-            ->max('version') ?? 0) + 1;
         $path = $file->store('documents/tokens/'.$token->id, 'local');
 
         if ($path === false) {
@@ -43,7 +40,8 @@ class DocumentController extends Controller
         $document = Document::create([
             'token_id' => $token->id,
             'type' => $data['type'],
-            'version' => $version,
+            'collection_key' => (string) Str::uuid(),
+            'version' => 1,
             'original_name' => $file->getClientOriginalName(),
             'path' => $path,
             'mime_type' => $file->getMimeType(),
@@ -52,7 +50,51 @@ class DocumentController extends Controller
         ]);
         AuditService::record('upload-document', 'documents', $document);
 
-        return back()->with('success', ucwords(str_replace('-', ' ', $data['type'])).' uploaded as version '.$version.'.');
+        return back()->with('success', ucwords(str_replace('-', ' ', $data['type'])).' uploaded.');
+    }
+
+    public function updateToken(StoreTokenDocumentRequest $request, Token $token, Document $document): RedirectResponse
+    {
+        abort_unless($document->token_id === $token->id && $document->worker_id === null, 404);
+
+        $data = $request->validated();
+        abort_unless($document->type === $data['type'], 422);
+
+        $collectionKey = $document->collection_key ?? (string) Str::uuid();
+
+        if ($document->collection_key === null) {
+            $token->documents()
+                ->whereNull('worker_id')
+                ->where('type', $document->type)
+                ->whereNull('collection_key')
+                ->update(['collection_key' => $collectionKey]);
+        }
+
+        $file = $request->file('file');
+        $path = $file->store('documents/tokens/'.$token->id, 'local');
+
+        if ($path === false) {
+            return back()->withErrors(['file' => 'The file could not be stored. Try again.']);
+        }
+
+        $version = ($token->documents()
+            ->where('collection_key', $collectionKey)
+            ->max('version') ?? 0) + 1;
+
+        $newVersion = Document::create([
+            'token_id' => $token->id,
+            'type' => $data['type'],
+            'collection_key' => $collectionKey,
+            'version' => $version,
+            'original_name' => $file->getClientOriginalName(),
+            'path' => $path,
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'uploaded_by' => $request->user()->id,
+        ]);
+        AuditService::record('upload-document', 'documents', $newVersion);
+
+        return back()->with('success', ucwords(str_replace('-', ' ', $data['type'])).' updated to version '.$version.'.');
     }
 
     public function download(Document $document)
