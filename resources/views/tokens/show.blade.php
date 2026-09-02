@@ -12,6 +12,7 @@
         </div>
         <div class="d-flex gap-2">
             <a class="btn btn-outline-primary" href="{{ route('tokens.pdf', $token) }}" target="_blank" rel="noopener"><i class="bi bi-file-pdf me-2"></i>View PDF</a>
+            <a class="btn btn-outline-primary" href="{{ route('tokens.pdf', [$token, 'download' => 1]) }}"><i class="bi bi-download me-2" aria-hidden="true"></i>Download PDF</a>
             @if(auth()->user()->hasAnyRole('super-admin', 'administrator'))
                 <a class="btn btn-primary" href="{{ route('tokens.edit', $token) }}">Edit</a>
             @endif

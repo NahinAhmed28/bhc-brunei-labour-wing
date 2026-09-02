@@ -434,7 +434,7 @@ class TokenControllerTest extends TestCase
         $response->assertDontSee('name="receipt_number"', false);
     }
 
-    public function test_token_details_open_the_pdf_in_a_new_tab(): void
+    public function test_token_details_offer_view_and_download_pdf_actions(): void
     {
         [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
         $token = $this->createToken($administrator, $company, $agency, $category);
@@ -446,7 +446,11 @@ class TokenControllerTest extends TestCase
             false,
         );
         $response->assertSeeText('View PDF');
-        $response->assertDontSeeText('Download PDF');
+        $response->assertSee(
+            'href="'.route('tokens.pdf', [$token, 'download' => 1]).'"',
+            false,
+        );
+        $response->assertSeeText('Download PDF');
     }
 
     public function test_token_edit_page_opens_the_pdf_in_a_new_tab(): void
@@ -478,6 +482,26 @@ class TokenControllerTest extends TestCase
             'module' => 'tokens',
             'record_id' => (string) $token->id,
             'action' => 'view-pdf',
+        ]);
+    }
+
+    public function test_token_pdf_can_be_downloaded_after_creation(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $token = $this->createToken($administrator, $company, $agency, $category);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.pdf', [
+            'token' => $token,
+            'download' => 1,
+        ]));
+
+        $response->assertOk();
+        $response->assertDownload($token->token_number.'.pdf');
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertDatabaseHas('audit_logs', [
+            'module' => 'tokens',
+            'record_id' => (string) $token->id,
+            'action' => 'download-pdf',
         ]);
     }
 

@@ -179,16 +179,18 @@ class TokenController extends Controller
         return redirect()->route('tokens.edit', $token)->with('success', 'Token updated and transfer history recorded.');
     }
 
-    public function pdf(Token $token)
+    public function pdf(Request $request, Token $token)
     {
         $token->load(['company', 'agency', 'category', 'currentHolder']);
-        AuditService::record('view-pdf', 'tokens', $token);
+        $shouldDownload = $request->boolean('download');
+        AuditService::record($shouldDownload ? 'download-pdf' : 'view-pdf', 'tokens', $token);
         $safeTokenNumber = (string) Str::of($token->token_number)
             ->replaceMatches('/[^A-Za-z0-9._-]+/', '-')
             ->trim('-');
         $filename = ($safeTokenNumber !== '' ? $safeTokenNumber : 'token-'.$token->id).'.pdf';
+        $pdf = Pdf::loadView('pdf.token', compact('token'))->setPaper('a4');
 
-        return Pdf::loadView('pdf.token', compact('token'))->setPaper('a4')->stream($filename);
+        return $shouldDownload ? $pdf->download($filename) : $pdf->stream($filename);
     }
 
     public function cancel(Request $r, Token $token)
