@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TokenController extends Controller
 {
@@ -182,8 +183,12 @@ class TokenController extends Controller
     {
         $token->load(['company', 'agency', 'category', 'currentHolder']);
         AuditService::record('view-pdf', 'tokens', $token);
+        $safeTokenNumber = (string) Str::of($token->token_number)
+            ->replaceMatches('/[^A-Za-z0-9._-]+/', '-')
+            ->trim('-');
+        $filename = ($safeTokenNumber !== '' ? $safeTokenNumber : 'token-'.$token->id).'.pdf';
 
-        return Pdf::loadView('pdf.token', compact('token'))->setPaper('a4')->stream($token->token_number.'.pdf');
+        return Pdf::loadView('pdf.token', compact('token'))->setPaper('a4')->stream($filename);
     }
 
     public function cancel(Request $r, Token $token)

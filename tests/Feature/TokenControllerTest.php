@@ -449,6 +449,20 @@ class TokenControllerTest extends TestCase
         $response->assertDontSeeText('Download PDF');
     }
 
+    public function test_token_edit_page_opens_the_pdf_in_a_new_tab(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $token = $this->createToken($administrator, $company, $agency, $category);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.edit', $token));
+
+        $response->assertSee(
+            'href="'.route('tokens.pdf', $token).'" target="_blank" rel="noopener"',
+            false,
+        );
+        $response->assertSeeText('View Token PDF');
+    }
+
     public function test_token_pdf_is_displayed_inline_instead_of_downloaded(): void
     {
         [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
@@ -465,6 +479,20 @@ class TokenControllerTest extends TestCase
             'record_id' => (string) $token->id,
             'action' => 'view-pdf',
         ]);
+    }
+
+    public function test_token_pdf_loads_when_the_reference_contains_filename_unsafe_characters(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update(['token_number' => 'REF/2026:001']);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.pdf', $token));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringContainsString('inline', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('REF-2026-001.pdf', (string) $response->headers->get('content-disposition'));
     }
 
     public function test_token_pdf_displays_the_token_category(): void

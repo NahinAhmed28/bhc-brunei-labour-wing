@@ -2,13 +2,20 @@
 @section('title', $token->exists ? 'Edit Token Submission' : 'Create Token')
 @section('content')
 
-<div class="mb-4">
-    <a class="small text-decoration-none" href="{{ $token->exists ? route('tokens.show', $token) : route('tokens.index') }}">
-        <i class="bi bi-arrow-left me-1"></i>Back
-    </a>
-    <div class="page-eyebrow mt-3">{{ $token->exists ? $token->token_number : 'New controlled record' }}</div>
-    <h1 class="page-title">{{ $token->exists ? 'Edit Token Submission' : 'Create Token' }}</h1>
-    <p class="page-lead">Protected company, agency and demand values can only be changed by a Super Administrator and require a reason.</p>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <a class="small text-decoration-none" href="{{ $token->exists ? route('tokens.show', $token) : route('tokens.index') }}">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+        <div class="page-eyebrow mt-3">{{ $token->exists ? $token->token_number : 'New controlled record' }}</div>
+        <h1 class="page-title">{{ $token->exists ? 'Edit Token Submission' : 'Create Token' }}</h1>
+        <p class="page-lead mb-0">Protected company, agency and demand values can only be changed by a Super Administrator and require a reason.</p>
+    </div>
+    @if($token->exists)
+        <a class="btn btn-outline-primary" href="{{ route('tokens.pdf', $token) }}" target="_blank" rel="noopener">
+            <i class="bi bi-file-pdf me-2" aria-hidden="true"></i>View Token PDF
+        </a>
+    @endif
 </div>
 
 @php
