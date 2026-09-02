@@ -50,9 +50,11 @@ class TokenController extends Controller
         $data['site_visit_required'] = $r->boolean('site_visit_required');
         $category = TokenCategory::findOrFail($data['token_category_id']);
         $isVA = $category->isVisaAttestation();
+        $isChangePreWorker = $category->isChangePreWorker();
         $data['pre_selected'] = $category->isDemandLetterSubmission() && $r->boolean('pre_selected');
         $data['demanded_workers'] = $category->isDemandLetterSubmission() ? $data['demanded_workers'] : null;
         $data['required_visa_attestation'] = $isVA ? $data['required_visa_attestation'] : null;
+        $data['required_worker_changes'] = $isChangePreWorker ? $data['required_worker_changes'] : null;
 
         $token = DB::transaction(function () use ($r, $data, $category, $isVA, $requestedTokenNumber) {
             $data['token_number'] = $requestedTokenNumber !== ''
@@ -137,7 +139,7 @@ class TokenController extends Controller
             unset($data['token_number']);
         }
         $changeReason = $r->validated('change_reason');
-        $protected = ['token_number', 'company_id', 'agency_id', 'demanded_workers', 'required_visa_attestation'];
+        $protected = ['token_number', 'company_id', 'agency_id', 'demanded_workers', 'required_visa_attestation', 'required_worker_changes'];
         if (! $r->user()->isSuperAdmin()) {
             $data = Arr::except($data, $protected);
         } else {
@@ -153,16 +155,12 @@ class TokenController extends Controller
         $categoryId = $data['token_category_id'] ?? $token->token_category_id;
         $category = TokenCategory::findOrFail($categoryId);
         $isVA = $category->isVisaAttestation();
+        $isChangePreWorker = $category->isChangePreWorker();
 
         if ($r->user()->isSuperAdmin()) {
-            if ($isVA) {
-                $data['demanded_workers'] = null;
-            } elseif ($category->isDemandLetterSubmission()) {
-                $data['required_visa_attestation'] = null;
-            } else {
-                $data['demanded_workers'] = null;
-                $data['required_visa_attestation'] = null;
-            }
+            $data['demanded_workers'] = $category->isDemandLetterSubmission() ? $data['demanded_workers'] : null;
+            $data['required_visa_attestation'] = $isVA ? $data['required_visa_attestation'] : null;
+            $data['required_worker_changes'] = $isChangePreWorker ? $data['required_worker_changes'] : null;
         }
 
         $data['pre_selected'] = $category->isDemandLetterSubmission() && $r->boolean('pre_selected');

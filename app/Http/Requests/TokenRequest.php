@@ -18,6 +18,7 @@ class TokenRequest extends FormRequest
         $category = TokenCategory::find($this->integer('token_category_id'));
         $isDemandLetterSubmission = $category?->isDemandLetterSubmission() ?? false;
         $isVisaAttestation = $category?->isVisaAttestation() ?? false;
+        $isChangePreWorker = $category?->isChangePreWorker() ?? false;
 
         return [
             'token_number' => 'nullable|string|max:255',
@@ -37,6 +38,13 @@ class TokenRequest extends FormRequest
             'required_visa_attestation' => [
                 Rule::excludeUnless($isVisaAttestation),
                 Rule::requiredIf($isVisaAttestation),
+                'integer',
+                'min:1',
+                'max:10000',
+            ],
+            'required_worker_changes' => [
+                Rule::excludeUnless($isChangePreWorker),
+                Rule::requiredIf($isChangePreWorker),
                 'integer',
                 'min:1',
                 'max:10000',

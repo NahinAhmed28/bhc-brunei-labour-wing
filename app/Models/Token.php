@@ -24,6 +24,7 @@ class Token extends Model
             'cancelled_at' => 'datetime',
             'amount' => 'decimal:2',
             'required_visa_attestation' => 'integer',
+            'required_worker_changes' => 'integer',
         ];
     }
 
@@ -35,6 +36,11 @@ class Token extends Model
     public function isDemandLetterSubmission(): bool
     {
         return $this->category?->isDemandLetterSubmission() ?? false;
+    }
+
+    public function isChangePreWorker(): bool
+    {
+        return $this->category?->isChangePreWorker() ?? false;
     }
 
     public function company()

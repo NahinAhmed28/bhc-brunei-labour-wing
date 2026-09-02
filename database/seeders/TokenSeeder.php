@@ -67,6 +67,12 @@ class TokenSeeder extends Seeder
                 $record['pre_selected'] = (bool) ($record['pre_selected'] ?? false);
                 $record['site_visit_required'] = (bool) ($record['site_visit_required'] ?? false);
                 $record['required_visa_attestation'] = $record['required_visa_attestation'] ?? $this->requiredVisaAttestationFromRemarks($record['remarks'] ?? null);
+                $record['required_worker_changes'] = $categoryName === 'Change Pre Worker'
+                    ? $record['demanded_workers']
+                    : null;
+                $record['demanded_workers'] = $categoryName === 'Demand Letter Submission'
+                    ? $record['demanded_workers']
+                    : null;
                 $record['boesl_status'] = $record['boesl_status'] ? 'submitted' : 'pending';
                 $record['visa_status'] = $record['visa_status'] ?: 'pending';
                 $record['file_status'] = 'active';

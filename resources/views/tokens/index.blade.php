@@ -218,7 +218,7 @@
                     <th scope="col"><span class="token-column-label"><i class="bi bi-buildings" aria-hidden="true"></i>Company</span></th>
                     {{-- Hidden on md, visible on lg+ --}}
                     <th class="col-hide-md" scope="col"><span class="token-column-label"><i class="bi bi-calendar3" aria-hidden="true"></i>Received</span></th>
-                    <th scope="col"><span class="token-column-label"><i class="bi bi-person-lines-fill" aria-hidden="true"></i>Demand / VA</span></th>
+                    <th scope="col"><span class="token-column-label"><i class="bi bi-person-lines-fill" aria-hidden="true"></i>Required</span></th>
                     <th class="col-hide-md" scope="col"><span class="token-column-label"><i class="bi bi-person-check" aria-hidden="true"></i>Approved</span></th>
                     <th class="col-hide-md" scope="col"><span class="token-column-label"><i class="bi bi-file-earmark-check" aria-hidden="true"></i>BHC No.</span></th>
                     <th scope="col"><span class="token-column-label"><i class="bi bi-send-check" aria-hidden="true"></i>BOESL</span></th>
@@ -228,11 +228,16 @@
             <tbody>
             @forelse($tokens as $token)
                 @php
-                    $isVA = strtoupper($token->category->code ?? '') === 'VA';
-                    $demandVal = $isVA
-                        ? ($token->required_visa_attestation ?? '—')
-                        : ($token->demanded_workers ?? '—');
-                    $demandLabel = $isVA ? 'VA' : null;
+                    $demandVal = match (true) {
+                        $token->isVA() => $token->required_visa_attestation ?? '—',
+                        $token->isChangePreWorker() => $token->required_worker_changes ?? '—',
+                        default => $token->demanded_workers ?? '—',
+                    };
+                    $demandLabel = match (true) {
+                        $token->isVA() => 'VA',
+                        $token->isChangePreWorker() => 'Change',
+                        default => null,
+                    };
                 @endphp
                 <tr class="token-row" tabindex="0" role="button"
                     aria-haspopup="dialog" aria-controls="tokenDetailsModal"
@@ -332,9 +337,16 @@
     <div class="token-card-view p-3">
         @forelse($tokens as $token)
             @php
-                $isVA = strtoupper($token->category->code ?? '') === 'VA';
-                $demandVal   = $isVA ? ($token->required_visa_attestation ?? '—') : ($token->demanded_workers ?? '—');
-                $demandTitle = $isVA ? 'Visa Attestation' : 'Demanded Workers';
+                $demandVal = match (true) {
+                    $token->isVA() => $token->required_visa_attestation ?? '—',
+                    $token->isChangePreWorker() => $token->required_worker_changes ?? '—',
+                    default => $token->demanded_workers ?? '—',
+                };
+                $demandTitle = match (true) {
+                    $token->isVA() => 'Visa Attestations',
+                    $token->isChangePreWorker() => 'Workers Requiring Change',
+                    default => 'Demanded Workers',
+                };
             @endphp
             <div class="token-card token-register-mobile-card">
                 <div class="token-card-header">

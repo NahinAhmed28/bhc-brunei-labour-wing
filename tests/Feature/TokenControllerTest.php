@@ -132,7 +132,7 @@ class TokenControllerTest extends TestCase
     public function test_non_demand_letter_category_discards_worker_demand_options(): void
     {
         [$administrator, $company, $agency] = $this->createTokenDependencies();
-        $category = TokenCategory::create(['name' => 'Change Pre Worker', 'code' => 'CPA']);
+        $category = TokenCategory::create(['name' => 'Other Submission', 'code' => 'OTHER']);
 
         $response = $this->actingAs($administrator)->post(route('tokens.store'), [
             'company_id' => $company->id,
@@ -153,6 +153,51 @@ class TokenControllerTest extends TestCase
         $this->assertFalse($token->pre_selected);
     }
 
+    public function test_change_pre_worker_category_requires_the_number_of_workers_to_change(): void
+    {
+        [$administrator, $company, $agency] = $this->createTokenDependencies();
+        $category = TokenCategory::create(['name' => 'Change Pre Worker', 'code' => 'CPA']);
+
+        $response = $this->actingAs($administrator)->post(route('tokens.store'), [
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'received_on' => '2026-08-30',
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+        ]);
+
+        $response->assertSessionHasErrors('required_worker_changes');
+        $this->assertDatabaseCount('tokens', 0);
+    }
+
+    public function test_change_pre_worker_category_stores_only_its_required_worker_count(): void
+    {
+        [$administrator, $company, $agency] = $this->createTokenDependencies();
+        $category = TokenCategory::create(['name' => 'Change Pre Worker', 'code' => 'CPA']);
+
+        $response = $this->actingAs($administrator)->post(route('tokens.store'), [
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 99,
+            'required_visa_attestation' => 88,
+            'required_worker_changes' => 7,
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+        ]);
+
+        $token = Token::sole();
+
+        $response->assertRedirect(route('tokens.show', $token));
+        $this->assertSame(7, $token->required_worker_changes);
+        $this->assertNull($token->demanded_workers);
+        $this->assertNull($token->required_visa_attestation);
+    }
+
     public function test_create_form_marks_category_specific_fields_for_dynamic_display(): void
     {
         [$administrator] = $this->createTokenDependencies();
@@ -164,7 +209,10 @@ class TokenControllerTest extends TestCase
         $response->assertSee('data-category-code="CPA"', false);
         $response->assertSee('id="demandedWorkersGroup"', false);
         $response->assertSee('id="preSelectedGroup"', false);
+        $response->assertSee('id="workerChangesGroup"', false);
+        $response->assertSee('name="required_worker_changes"', false);
         $response->assertSee("var isDLS = code === 'DLS';", false);
+        $response->assertSee("var isCPA = code === 'CPA';", false);
     }
 
     public function test_update_stores_change_reason_only_in_the_audit_log(): void
@@ -430,6 +478,46 @@ class TokenControllerTest extends TestCase
 
         $this->assertStringContainsString('Token category', $pdfHtml);
         $this->assertStringContainsString('Demand Letter Submission', $pdfHtml);
+    }
+
+    public function test_token_pdf_displays_the_required_visa_attestation_count(): void
+    {
+        [$administrator, $company, $agency] = $this->createTokenDependencies();
+        $category = TokenCategory::create(['name' => 'Visa Attestation', 'code' => 'VA']);
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update([
+            'demanded_workers' => null,
+            'required_visa_attestation' => 24,
+        ]);
+
+        $pdfHtml = view('pdf.token', [
+            'token' => $token->load(['company', 'agency', 'category', 'currentHolder']),
+        ])->render();
+
+        $this->assertStringContainsString('Required visa attestations', $pdfHtml);
+        $this->assertStringContainsString('>24<', $pdfHtml);
+        $this->assertStringNotContainsString('Demanded workers', $pdfHtml);
+    }
+
+    public function test_token_pdf_displays_the_change_pre_worker_count_in_a_details_box(): void
+    {
+        [$administrator, $company, $agency] = $this->createTokenDependencies();
+        $category = TokenCategory::create(['name' => 'Change Pre Worker', 'code' => 'CPA']);
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update([
+            'demanded_workers' => null,
+            'required_worker_changes' => 7,
+        ]);
+
+        $pdfHtml = view('pdf.token', [
+            'token' => $token->load(['company', 'agency', 'category', 'currentHolder']),
+        ])->render();
+
+        $this->assertStringContainsString('Workers requiring change', $pdfHtml);
+        $this->assertStringContainsString('>7<', $pdfHtml);
+        $this->assertStringContainsString('class="details-box"', $pdfHtml);
+        $this->assertStringContainsString('.top h1 { font-family: DejaVu Serif, serif; margin: 0; font-size: 26px; }', $pdfHtml);
+        $this->assertStringContainsString('.token { font-size: 18px;', $pdfHtml);
     }
 
     /**

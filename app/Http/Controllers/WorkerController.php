@@ -15,9 +15,26 @@ class WorkerController extends Controller
 {
     public function index(Request $r)
     {
-        $workers = Worker::with('token.company', 'token.agency')->when($r->q, function ($q, $v) {
-            $q->where(function ($s) use ($v) {
-                $s->where('full_name', 'like', "%$v%")->orWhere('passport_number', 'like', "%$v%")->orWhere('registration_number', 'like', "%$v%")->orWhereHas('token', fn ($x) => $x->where('token_number', 'like', "%$v%")->orWhere('bhc_number', 'like', "%$v%"));
+        $search = trim((string) $r->query('q', ''));
+        $normalizedReference = preg_replace('/[^A-Za-z0-9]/', '', $search) ?? '';
+
+        $workers = Worker::with('token.company', 'token.agency')->when($search !== '', function ($query) use ($normalizedReference, $search) {
+            $query->where(function ($workerQuery) use ($normalizedReference, $search) {
+                $workerQuery
+                    ->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('passport_number', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('demand_reference', 'like', "%{$search}%")
+                    ->orWhereHas('token', function ($tokenQuery) use ($normalizedReference, $search) {
+                        $tokenQuery
+                            ->where('token_number', 'like', "%{$search}%")
+                            ->orWhere('bhc_number', 'like', "%{$search}%")
+                            ->when($normalizedReference !== '', function ($referenceQuery) use ($normalizedReference) {
+                                $referenceQuery
+                                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(token_number, '-', ''), '/', ''), ' ', ''), '.', ''), '_', '') LIKE ?", ["%{$normalizedReference}%"])
+                                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(bhc_number, '-', ''), '/', ''), ' ', ''), '.', ''), '_', '') LIKE ?", ["%{$normalizedReference}%"]);
+                            });
+                    });
             });
         })->when($r->visa_status, fn ($q, $v) => $q->where('visa_status', $v))->when($r->flight_status, fn ($q, $v) => $q->where('flight_status', $v))->when($r->insurance_status, fn ($q, $v) => $q->where('insurance_status', $v))->when($r->ic_status, fn ($q, $v) => $q->where('ic_status', $v))->latest()->paginate((int) $r->input('per_page', 15))->withQueryString();
 
@@ -34,8 +51,8 @@ class WorkerController extends Controller
     public function store(WorkerRequest $r)
     {
         $token = Token::findOrFail($r->token_id);
-        $limit = $token->approved_workers ?: $token->demanded_workers;
-        if ($token->workers()->count() >= $limit && ! ($r->user()->isSuperAdmin() && $r->boolean('override_limit'))) {
+        $limit = $token->approved_workers ?: ($token->demanded_workers ?? $token->required_visa_attestation ?? $token->required_worker_changes);
+        if ($limit !== null && $token->workers()->count() >= $limit && ! ($r->user()->isSuperAdmin() && $r->boolean('override_limit'))) {
             return back()->withErrors(['token_id' => 'This token has reached its approved worker limit.'])->withInput();
         }
 

@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Token;
 use App\Models\TokenCategory;
 use App\Models\User;
+use App\Models\Worker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -112,5 +113,49 @@ class SearchFilterLayoutTest extends TestCase
         $response = $this->actingAs($administrator)->get('/agencies?q=%2B6738212701');
 
         $response->assertSee('Marya Indra AzZahra Employment Agency');
+    }
+
+    public function test_worker_search_finds_a_reference_number_without_separators(): void
+    {
+        $role = Role::create(['name' => 'super-admin', 'label' => 'Super Administrator']);
+        $administrator = User::factory()->create(['role_id' => $role->id]);
+        $company = Company::create(['name' => 'Brunei Harbour Services']);
+        $agency = Agency::create(['name' => 'Dhaka Workforce Agency']);
+        $category = TokenCategory::create(['name' => 'Demand Letter Submission', 'code' => 'DLS']);
+        $matchingToken = Token::create([
+            'token_number' => 'REF-2026/001',
+            'token_category_id' => $category->id,
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 2,
+            'created_by' => $administrator->id,
+        ]);
+        $otherToken = Token::create([
+            'token_number' => 'REF-2026/002',
+            'token_category_id' => $category->id,
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 2,
+            'created_by' => $administrator->id,
+        ]);
+        Worker::create([
+            'token_id' => $matchingToken->id,
+            'full_name' => 'Matching Worker',
+            'passport_number' => 'BA0123456',
+            'created_by' => $administrator->id,
+        ]);
+        Worker::create([
+            'token_id' => $otherToken->id,
+            'full_name' => 'Other Worker',
+            'passport_number' => 'BA0654321',
+            'created_by' => $administrator->id,
+        ]);
+
+        $response = $this->actingAs($administrator)->get(route('workers.index', ['q' => 'REF2026001']));
+
+        $response->assertSeeText('Matching Worker');
+        $response->assertDontSeeText('Other Worker');
     }
 }

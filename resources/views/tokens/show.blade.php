@@ -32,7 +32,7 @@
                             ['Company', $token->company->name],
                             ['Agency', $token->agency->name],
                             ['Received On', $token->received_on->format('d M Y')],
-                            ['Demanded Workers', $token->demanded_workers],
+                            [$token->isVA() ? 'Required Visa Attestations' : ($token->isChangePreWorker() ? 'Workers Requiring Change' : 'Demanded Workers'), $token->required_visa_attestation ?? $token->required_worker_changes ?? $token->demanded_workers],
                             ['Approved Workers', $token->approved_workers],
                             ['BHC No.', $token->bhc_number ?: 'Not assigned'],
                             ['Send to BOESL', ucfirst($token->boesl_status)],
@@ -52,7 +52,7 @@
 
             <div class="card">
                 <div class="card-header bg-white p-4 d-flex justify-content-between align-items-center">
-                    <div><h2 class="section-title mb-0">Attached workers</h2><small class="text-secondary">{{ $token->workers->count() }} of {{ $token->approved_workers ?: $token->demanded_workers }} permitted</small></div>
+                    <div><h2 class="section-title mb-0">Attached workers</h2><small class="text-secondary">{{ $token->workers->count() }} of {{ $token->approved_workers ?: ($token->demanded_workers ?? $token->required_visa_attestation ?? $token->required_worker_changes ?? 'unlimited') }} permitted</small></div>
                     @if(auth()->user()->hasAnyRole('super-admin', 'administrator', 'data-entry'))
                         <a class="btn btn-sm btn-primary" href="{{ route('workers.create', ['token_id' => $token->id]) }}">Add worker</a>
                     @endif

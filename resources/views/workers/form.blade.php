@@ -45,7 +45,7 @@
                                     value="{{ $tokenOption->token_number }}"
                                     data-token-id="{{ $tokenOption->id }}"
                                     data-bhc-number="{{ $tokenOption->bhc_number }}"
-                                >BHC {{ $tokenOption->bhc_number ?: 'pending' }} &middot; {{ $tokenOption->company->name }} / {{ $tokenOption->agency->name }} &middot; {{ $tokenOption->workers_count }}/{{ $tokenOption->approved_workers ?: $tokenOption->demanded_workers }}</option>
+                                >BHC {{ $tokenOption->bhc_number ?: 'pending' }} &middot; {{ $tokenOption->company->name }} / {{ $tokenOption->agency->name }} &middot; {{ $tokenOption->workers_count }}/{{ $tokenOption->approved_workers ?: ($tokenOption->demanded_workers ?? $tokenOption->required_visa_attestation ?? $tokenOption->required_worker_changes ?? 'unlimited') }}</option>
                             @endforeach
                         </datalist>
                         <input type="hidden" name="token_id" value="{{ old('token_id', $worker->token_id) }}" data-token-lookup-value>

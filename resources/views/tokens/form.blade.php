@@ -16,6 +16,7 @@
     $selectedCategory = $categories->firstWhere('id', $selectedCategoryId);
     $currentCategoryIsDLS = $selectedCategory?->isDemandLetterSubmission() ?? false;
     $currentCategoryIsVA = $selectedCategory?->isVisaAttestation() ?? false;
+    $currentCategoryIsCPA = $selectedCategory?->isChangePreWorker() ?? false;
 @endphp
 
 <form method="post" action="{{ $token->exists ? route('tokens.update', $token) : route('tokens.store') }}">
@@ -100,6 +101,15 @@
                            value="{{ old('required_visa_attestation', $token->required_visa_attestation) }}"
                            @readonly($token->exists && !auth()->user()->isSuperAdmin())>
                     @error('required_visa_attestation') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="col-md-4" id="workerChangesGroup" @if(!$currentCategoryIsCPA) style="display:none" @endif>
+                    <label class="form-label">Workers Requiring Change *</label>
+                    <input class="form-control" type="number" min="1" name="required_worker_changes"
+                           id="workerChangesInput"
+                           value="{{ old('required_worker_changes', $token->required_worker_changes) }}"
+                           @readonly($token->exists && !auth()->user()->isSuperAdmin())>
+                    @error('required_worker_changes') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="col-md-4">
@@ -348,9 +358,11 @@
     var categorySelect = document.getElementById('tokenCategorySelect');
     var dlGroup        = document.getElementById('demandedWorkersGroup');
     var vaGroup        = document.getElementById('visaAttestationGroup');
+    var workerChangesGroup = document.getElementById('workerChangesGroup');
     var preGroup       = document.getElementById('preSelectedGroup');
     var dlInput        = document.getElementById('demandedWorkersInput');
     var vaInput        = document.getElementById('visaAttestationInput');
+    var workerChangesInput = document.getElementById('workerChangesInput');
     var preInput       = document.getElementById('pre');
 
     function applyCategory() {
@@ -358,10 +370,12 @@
         var code  = opt ? opt.getAttribute('data-category-code') : '';
         var isDLS = code === 'DLS';
         var isVA  = code === 'VA';
+        var isCPA = code === 'CPA';
 
         dlGroup.style.display = isDLS ? '' : 'none';
         preGroup.style.display = isDLS ? 'flex' : 'none';
         vaGroup.style.display = isVA ? '' : 'none';
+        workerChangesGroup.style.display = isCPA ? '' : 'none';
 
         if (isDLS) {
             dlInput.setAttribute('required', '');
@@ -376,6 +390,13 @@
         } else {
             vaInput.removeAttribute('required');
             vaInput.value = '';
+        }
+
+        if (isCPA) {
+            workerChangesInput.setAttribute('required', '');
+        } else {
+            workerChangesInput.removeAttribute('required');
+            workerChangesInput.value = '';
         }
     }
 

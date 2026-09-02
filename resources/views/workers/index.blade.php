@@ -19,7 +19,7 @@
             <form class="filter-grid" method="get">
                 <div class="filter-search">
                     <label class="form-label" for="worker-search">Search</label>
-                    <input class="form-control" id="worker-search" name="q" value="{{ request('q') }}" placeholder="Worker, passport, registration, token or BHC">
+                    <input class="form-control" id="worker-search" name="q" value="{{ request('q') }}" placeholder="Worker, passport, registration or reference number">
                 </div>
                 @foreach([
                     'visa_status' => ['Visa Status', ['pending', 'processing', 'received', 'rejected']],

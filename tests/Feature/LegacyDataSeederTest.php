@@ -48,6 +48,14 @@ class LegacyDataSeederTest extends TestCase
         $this->assertSame('Rashama Karmakar', $token->currentHolder->name);
         $this->assertSame('active', $token->file_status);
 
+        $changePreWorkerToken = Token::with('category')
+            ->where('token_number', 'DL-20258')
+            ->whereHas('category', fn ($query) => $query->where('code', 'CPA'))
+            ->firstOrFail();
+
+        $this->assertSame(1, $changePreWorkerToken->required_worker_changes);
+        $this->assertNull($changePreWorkerToken->demanded_workers);
+
         $this->assertDatabaseHas('tokens', [
             'token_number' => 'DL-42038',
             'created_by' => User::where('name', 'Sagor')->value('id'),

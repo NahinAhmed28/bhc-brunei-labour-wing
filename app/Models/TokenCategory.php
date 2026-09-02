@@ -31,6 +31,11 @@ class TokenCategory extends Model
         return strtoupper($this->code) === 'VA';
     }
 
+    public function isChangePreWorker(): bool
+    {
+        return strtoupper($this->code) === 'CPA';
+    }
+
     public function tokens(): HasMany
     {
         return $this->hasMany(Token::class);

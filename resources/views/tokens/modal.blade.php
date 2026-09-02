@@ -25,7 +25,7 @@
                         ['File holder', $token->currentHolder?->name ?: 'Unassigned'],
                         ['Agent or representative', $token->agent_name ?: 'Not recorded'],
                         ['Received on', $token->received_on->format('d M Y')],
-                        ['Demanded workers', number_format($token->demanded_workers)],
+                        [$token->isVA() ? 'Required visa attestations' : ($token->isChangePreWorker() ? 'Workers requiring change' : 'Demanded workers'), number_format($token->required_visa_attestation ?? $token->required_worker_changes ?? $token->demanded_workers ?? 0)],
                         ['Approved workers', number_format($token->approved_workers)],
                         ['Pre selected worker', $token->pre_selected ? 'Yes' : 'No'],
                         ['BHC number', $token->bhc_number ?: 'Pending'],

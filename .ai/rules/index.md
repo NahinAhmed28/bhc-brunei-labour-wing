@@ -9,6 +9,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | {app/Http/Controllers/DocumentController.php,resources/views/tokens/**,tests/Feature/TokenDocumentTest.php,tests/Feature/TokenModalTest.php} | .ai/rules/feature-feature.md |
 | {app/Http/Controllers/DocumentController.php,resources/views/tokens/**,tests/Feature/TokenDocumentTest.php} | .ai/rules/feature.md |
 | {app/Http/Requests/MasterDataRequest.php,app/Models/Company.php,app/Models/Agency.php,tests/Feature/MasterDataContactReuseTest.php} | .ai/rules/models-feature.md |
+| {app/Http/Requests/TokenRequest.php,app/Http/Controllers/TokenController.php,app/Models/Token.php,app/Models/TokenCategory.php,database/migrations/**,database/seeders/TokenSeeder.php,resources/views/tokens/**,resources/views/pdf/token.blade.php,tests/Feature/TokenControllerTest.php} | .ai/rules/pdf-feature.md |
 | {app/Http/Controllers/TokenController.php,app/Http/Requests/TokenRequest.php,database/migrations/**,database/seeders/TokenSeeder.php,tests/Feature/TokenControllerTest.php} | .ai/rules/seeders-feature.md |
 | {app,resources,routes,tests,database/seeders}/** | .ai/rules/seeders.md |
 | {app/Http/Controllers/TokenCategoryController.php,app/Http/Requests/TokenCategoryRequest.php,resources/views/layouts/app.blade.php,resources/views/token-categories/**,routes/web.php} | .ai/rules/token-categories.md |
