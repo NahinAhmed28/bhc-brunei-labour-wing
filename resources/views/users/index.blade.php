@@ -36,7 +36,19 @@
                         <td>{{ $user->role?->label }}</td>
                         <td><span class="status {{ $user->is_active ? 'status-success' : 'status-danger' }}">{{ $user->is_active ? 'Active' : 'Inactive' }}</span></td>
                         <td>{{ $user->last_login_at?->format('d M Y, H:i') ?: 'Never' }}</td>
-                        <td class="pe-4"><a class="btn btn-sm btn-light" href="{{ route('users.edit', $user) }}">Edit</a></td>
+                        <td class="pe-4">
+                            <div class="d-flex gap-2">
+                                <a class="btn btn-sm btn-light" href="{{ route('users.edit', $user) }}">Edit</a>
+                                <form method="post" action="{{ route('users.status.update', $user) }}">
+                                    @csrf
+                                    @method('patch')
+                                    <input type="hidden" name="is_active" value="{{ $user->is_active ? 0 : 1 }}">
+                                    <button class="btn btn-sm {{ $user->is_active ? 'btn-outline-danger' : 'btn-outline-success' }}" type="submit">
+                                        {{ $user->is_active ? 'Deactivate' : 'Activate' }}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                 @endforeach
                 </tbody>

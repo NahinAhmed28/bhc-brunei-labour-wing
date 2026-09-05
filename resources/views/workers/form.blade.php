@@ -24,9 +24,9 @@
             </div>
             <div class="card-body p-4">
                 <div class="row g-3">
-                    <div class="col-12">
-                        @php($selectedToken = $tokens->firstWhere('id', old('token_id', $worker->token_id)))
-                        <label class="form-label" for="token-lookup">BHC No. / Token Number *</label>
+                    @php($selectedToken = $tokens->firstWhere('id', old('token_id', $worker->token_id)))
+                    <div class="col-lg-6">
+                        <label class="form-label" for="token-lookup">Token Number / BHC No. *</label>
                         <input
                             class="form-control"
                             id="token-lookup"
@@ -45,11 +45,36 @@
                                     value="{{ $tokenOption->token_number }}"
                                     data-token-id="{{ $tokenOption->id }}"
                                     data-bhc-number="{{ $tokenOption->bhc_number }}"
+                                    data-token-url="{{ route('tokens.show', $tokenOption) }}"
                                 >BHC {{ $tokenOption->bhc_number ?: 'pending' }} &middot; {{ $tokenOption->company->name }} / {{ $tokenOption->agency->name }} &middot; {{ $tokenOption->workers_count }}/{{ $tokenOption->approved_workers ?: ($tokenOption->demanded_workers ?? $tokenOption->required_visa_attestation ?? $tokenOption->required_worker_changes ?? 'unlimited') }}</option>
                             @endforeach
                         </datalist>
                         <input type="hidden" name="token_id" value="{{ old('token_id', $worker->token_id) }}" data-token-lookup-value>
-                        <div class="form-text">Start typing, then select the matching authorized token.</div>
+                        <div class="form-text">Search by either reference, then select the matching token.</div>
+                        @error('token_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="col-lg-3">
+                        <label class="form-label" for="linked-bhc-number">BHC No. from Token</label>
+                        <input
+                            class="form-control"
+                            id="linked-bhc-number"
+                            value="{{ $selectedToken?->bhc_number ?: 'Pending' }}"
+                            readonly
+                            data-token-bhc-number
+                        >
+                        <div class="form-text">Managed in the linked token record.</div>
+                    </div>
+
+                    <div class="col-lg-3 d-flex align-items-end">
+                        <a
+                            class="btn btn-outline-primary w-100{{ $selectedToken ? '' : ' disabled' }}"
+                            href="{{ $selectedToken ? route('tokens.show', $selectedToken) : '#' }}"
+                            data-linked-token-url
+                            @if(! $selectedToken) aria-disabled="true" @endif
+                        >
+                            <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>View linked token
+                        </a>
                     </div>
 
                     <div class="col-md-6"><label class="form-label">Full name *</label><input class="form-control" name="full_name" value="{{ old('full_name', $worker->full_name) }}" required></div>

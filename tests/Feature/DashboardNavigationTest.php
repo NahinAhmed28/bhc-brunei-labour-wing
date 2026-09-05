@@ -27,13 +27,15 @@ class DashboardNavigationTest extends TestCase
         $response->assertOk();
         $response->assertSee('class="card metric-card metric-card-link"', false);
         $response->assertSee('href="'.route('tokens.index', ['created' => 'today']).'"', false);
-        $response->assertSee('href="'.route('tokens.index', ['bhc_status' => 'pending']).'"', false);
         $response->assertSee('href="'.route('tokens.index', ['boesl_status' => 'pending']).'"', false);
         $response->assertSee('href="'.route('workers.index', ['flight_status' => 'pending']).'"', false);
         $response->assertSee('href="'.route('tokens.index').'"', false);
         $response->assertSee('href="'.route('workers.index').'"', false);
         $response->assertSee('href="'.route('token-categories.index').'"', false);
         $response->assertSeeText('Workers');
+        $response->assertSeeText('Total registered workers');
+        $response->assertDontSeeText('Workers entered');
+        $response->assertDontSeeText('Pending BHC No.');
         $response->assertDontSeeText('Applications');
         $response->assertSee('class="sidebar-navigation"', false);
         $response->assertSee('class="nav-sector"', false);
@@ -89,12 +91,14 @@ class DashboardNavigationTest extends TestCase
         ];
     }
 
-    public function test_dashboard_only_lists_users_with_assigned_tokens(): void
+    public function test_dashboard_lists_active_users_with_assigned_or_generated_token_counts(): void
     {
         $role = Role::create(['name' => 'super-admin', 'label' => 'Super Administrator']);
         $administrator = User::factory()->create(['role_id' => $role->id]);
         $holderWithFiles = User::factory()->create(['name' => 'Assigned Holder', 'role_id' => $role->id, 'is_active' => true]);
         $holderWithoutFiles = User::factory()->create(['name' => 'Idle Holder', 'role_id' => $role->id, 'is_active' => true]);
+        $creatorWithoutAssignedFiles = User::factory()->create(['name' => 'Token Generator', 'role_id' => $role->id, 'is_active' => true]);
+        $inactiveCreator = User::factory()->create(['name' => 'Inactive Token Generator', 'role_id' => $role->id, 'is_active' => false]);
 
         $company = Company::create(['name' => 'Test Company']);
         $agency = Agency::create(['name' => 'Test Agency']);
@@ -111,12 +115,36 @@ class DashboardNavigationTest extends TestCase
             'created_by' => $administrator->id,
             'updated_by' => $administrator->id,
         ]);
+        Token::create([
+            'token_number' => 'DL-01234567',
+            'token_category_id' => $category->id,
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'received_on' => now()->toDateString(),
+            'demanded_workers' => 3,
+            'created_by' => $creatorWithoutAssignedFiles->id,
+            'updated_by' => $creatorWithoutAssignedFiles->id,
+        ]);
+        Token::create([
+            'token_number' => 'DL-76543210',
+            'token_category_id' => $category->id,
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'received_on' => now()->toDateString(),
+            'demanded_workers' => 2,
+            'created_by' => $inactiveCreator->id,
+            'updated_by' => $inactiveCreator->id,
+        ]);
 
         $response = $this->actingAs($administrator)->get(route('dashboard'));
 
         $response->assertOk();
         $response->assertSee('Assigned Holder');
+        $response->assertSee('Token Generator');
         $response->assertDontSee('Idle Holder');
+        $response->assertDontSee('Inactive Token Generator');
+        $response->assertSeeText('Assigned files');
+        $response->assertSeeText('Tokens generated');
     }
 
     public function test_data_entry_navigation_omits_the_empty_management_sector(): void

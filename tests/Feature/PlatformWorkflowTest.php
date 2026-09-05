@@ -33,7 +33,7 @@ class PlatformWorkflowTest extends TestCase
         $response = $this->actingAs($user)->post('/tokens', ['company_id' => Company::first()->id, 'agency_id' => Agency::first()->id, 'token_category_id' => TokenCategory::first()->id, 'received_on' => today()->format('Y-m-d'), 'demanded_workers' => 5, 'approved_workers' => 3, 'boesl_status' => 'pending', 'visa_status' => 'pending', 'file_status' => 'active']);
         $response->assertRedirect();
         $token = Token::latest('id')->first();
-        $this->assertStringStartsWith('BHC-', $token->token_number);
+        $this->assertMatchesRegularExpression('/^DLS-\d{8}$/', $token->token_number);
         $this->assertSame($user->id, $token->current_holder_id);
         $this->assertSame($user->name, $token->received_by);
         $this->assertCount(1, $token->transferHistories);

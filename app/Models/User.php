@@ -28,6 +28,11 @@ class User extends Authenticatable
         return $this->hasMany(Token::class, 'current_holder_id');
     }
 
+    public function createdTokens(): HasMany
+    {
+        return $this->hasMany(Token::class, 'created_by');
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->role?->name === 'super-admin';

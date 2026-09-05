@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -44,6 +45,23 @@ class UserController extends Controller
         AuditService::record('update', 'users', $user, $old, $user->fresh()->only('name', 'email', 'role_id', 'is_active'));
 
         return redirect()->route('users.index')->with('success', 'User account updated.');
+    }
+
+    public function updateStatus(Request $request, User $user): RedirectResponse
+    {
+        $data = $request->validate(['is_active' => ['required', 'boolean']]);
+        $old = $user->only('is_active');
+
+        $user->update(['is_active' => $data['is_active']]);
+        AuditService::record(
+            $user->is_active ? 'activate' : 'deactivate',
+            'users',
+            $user,
+            $old,
+            $user->only('is_active'),
+        );
+
+        return back()->with('success', $user->is_active ? 'User account activated.' : 'User account deactivated.');
     }
 
     private function validateUser(Request $r, ?User $user = null): array

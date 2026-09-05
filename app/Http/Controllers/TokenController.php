@@ -57,10 +57,10 @@ class TokenController extends Controller
         $data['required_visa_attestation'] = $isVA ? $data['required_visa_attestation'] : null;
         $data['required_worker_changes'] = $isChangePreWorker ? $data['required_worker_changes'] : null;
 
-        $token = DB::transaction(function () use ($r, $data, $category, $isVA, $requestedTokenNumber) {
+        $token = DB::transaction(function () use ($r, $data, $category, $requestedTokenNumber) {
             $data['token_number'] = $requestedTokenNumber !== ''
                 ? $requestedTokenNumber
-                : $this->nextNumber($category, $isVA);
+                : $this->randomNumber($category);
             $data['created_by'] = $r->user()->id;
             $data['updated_by'] = $r->user()->id;
             $data['received_by'] = $r->user()->name;
@@ -181,7 +181,7 @@ class TokenController extends Controller
 
     public function pdf(Request $request, Token $token)
     {
-        $token->load(['company', 'agency', 'category', 'currentHolder']);
+        $token->load(['company', 'agency', 'category', 'creator.role']);
         $shouldDownload = $request->boolean('download');
         AuditService::record($shouldDownload ? 'download-pdf' : 'view-pdf', 'tokens', $token);
         $safeTokenNumber = (string) Str::of($token->token_number)
@@ -217,18 +217,17 @@ class TokenController extends Controller
         return ['token' => $token, 'companies' => Company::where('is_active', true)->orderBy('name')->get(), 'agencies' => Agency::where('is_active', true)->orderBy('name')->get(), 'categories' => $categories, 'users' => User::with('role')->where('is_active', true)->orderBy('name')->get()];
     }
 
-    /**
-     * Generate the next sequential token number following the boesel-visa process:
-     * VA categories get a "VA-" prefix; all others get "BHC-".
-     * Format: {PREFIX}{YYMM}-{NNNNN}  e.g. BHC-2608-00001 | VA-2608-00001
-     */
-    private function nextNumber(?TokenCategory $category = null, bool $isVA = false): string
+    private function randomNumber(TokenCategory $category): string
     {
-        $prefix = ($isVA ? 'VA-' : 'BHC-').now()->format('ym').'-';
-        $last = Token::withTrashed()->where('token_number', 'like', $prefix.'%')->lockForUpdate()->orderByDesc('id')->value('token_number');
-        $seq = $last ? ((int) substr($last, -5) + 1) : 1;
+        $prefix = (string) Str::of($category->code)
+            ->upper()
+            ->replaceMatches('/[^A-Z0-9]+/', '');
 
-        return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+        do {
+            $tokenNumber = ($prefix !== '' ? $prefix : 'TOKEN').'-'.str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+        } while (Token::withTrashed()->where('token_number', $tokenNumber)->exists());
+
+        return $tokenNumber;
     }
 
     private function latestTokenDocumentCollections(Collection $documents): Collection

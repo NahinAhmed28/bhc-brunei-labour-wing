@@ -50,5 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/tokens/{format}', [ReportController::class, 'tokens'])->whereIn('format', ['pdf', 'excel'])->name('reports.tokens');
     Route::get('/reports/workers/{format}', [ReportController::class, 'workers'])->whereIn('format', ['pdf', 'excel'])->name('reports.workers');
     Route::get('/audit', [AuditController::class, 'index'])->name('audit.index')->middleware('role:super-admin,viewer');
-    Route::resource('users', UserController::class)->except('show', 'destroy')->middleware('role:super-admin');
+    Route::middleware('role:super-admin')->group(function () {
+        Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.status.update');
+        Route::resource('users', UserController::class)->except('show', 'destroy');
+    });
 });

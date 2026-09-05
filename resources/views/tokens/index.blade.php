@@ -91,7 +91,7 @@
         <div class="page-eyebrow">Token operations</div>
         <h1 class="page-title">Token Submissions</h1>
         <p class="page-lead mb-0">
-            <span class="stat-pill"><i class="bi bi-ticket-perforated" aria-hidden="true"></i> {{ number_format($tokens->total()) }} total</span>
+            <span class="stat-pill"><i class="bi bi-ticket-perforated" aria-hidden="true"></i> {{ number_format($tokens->total()) }} matching tokens</span>
             <span class="stat-pill ms-1"><i class="bi bi-person-check" aria-hidden="true"></i> {{ number_format($preSelectedCount) }} pre-selected</span>
         </p>
     </div>
@@ -208,6 +208,10 @@
     {{-- ══════════════════════════════════════════════
          DESKTOP / MID TABLE VIEW  (≥768 px)
     ══════════════════════════════════════════════ --}}
+    <div class="px-4 py-3 border-bottom bg-body-tertiary" aria-live="polite">
+        <strong>{{ number_format($tokens->total()) }}</strong> token {{ $tokens->total() === 1 ? 'record' : 'records' }} found for the current filters.
+    </div>
+
     <div class="token-table-view token-table-wrap">
         <table class="table token-table mb-0">
             <thead>

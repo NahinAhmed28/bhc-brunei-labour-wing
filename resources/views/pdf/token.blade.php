@@ -20,6 +20,8 @@
         .grid tr:last-child td { border-bottom: 0; }
         .requirement td { background: #f4f7f5; }
         .requirement .value { color: #075f4c; font-size: 16px; }
+        .notes { border-top: 1px solid #cad8d1; padding: 13px 12px; }
+        .notes .value { font-size: 11px; font-weight: normal; line-height: 1.55; white-space: pre-wrap; }
         .footer { margin-top: 30px; border-top: 1px solid #ccd8d1; padding-top: 12px; color: #69776f; font-size: 9px; }
     </style>
 </head>
@@ -47,11 +49,12 @@
         <div class="details-heading">Submission details</div>
         <table class="grid">
             <tr><td><div class="label">Company</div><div class="value">{{ $token->company->name }}</div></td><td><div class="label">Recruiting agency</div><div class="value">{{ $token->agency->name }}</div></td></tr>
-            <tr><td><div class="label">Token category</div><div class="value">{{ $token->category->name }}</div></td><td><div class="label">Received date</div><div class="value">{{ $token->received_on->format('d F Y') }}</div></td></tr>
-            <tr class="requirement"><td><div class="label">{{ $requirementLabel }}</div><div class="value">{{ $requirementValue !== null ? number_format($requirementValue) : 'Not recorded' }}</div></td><td><div class="label">Approved workers</div><div class="value">{{ number_format($token->approved_workers) }}</div></td></tr>
-            <tr><td><div class="label">BHC number</div><div class="value">{{ $token->bhc_number ?: 'Pending' }}</div></td><td><div class="label">File holder</div><div class="value">{{ $token->currentHolder?->name ?: 'Unassigned' }}</div></td></tr>
+            <tr><td><div class="label">Token category</div><div class="value">{{ $token->category->name }}</div></td><td><div class="label">Received date</div><div class="value">{{ $token->received_on?->format('d F Y') ?: 'Not recorded' }}</div></td></tr>
+            <tr><td><div class="label">Token generated date</div><div class="value">{{ $token->created_at?->format('d F Y, H:i') ?: 'Not recorded' }}</div></td><td><div class="label">Token created by</div><div class="value">{{ $token->creator?->name ?: 'Not recorded' }}</div></td></tr>
+            <tr class="requirement"><td colspan="2"><div class="label">{{ $requirementLabel }}</div><div class="value">{{ $requirementValue !== null ? number_format($requirementValue) : 'Not recorded' }}</div></td></tr>
         </table>
+        <div class="notes"><div class="label">Notes</div><div class="value">{{ filled($token->remarks) ? $token->remarks : 'No notes recorded.' }}</div></div>
     </div>
-    <div class="footer">Generated {{ now()->format('d F Y, H:i') }} &middot; Verify this token against the central registry. Cancelled tokens remain in the audit record and are not valid for new processing.</div>
+    <div class="footer">Verify this token against the central registry. Cancelled tokens remain in the audit record and are not valid for new processing.</div>
 </body>
 </html>

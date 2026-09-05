@@ -55,6 +55,7 @@ class TokenControllerTest extends TestCase
         $this->assertSame($administrator->id, $token->created_by);
         $this->assertSame($administrator->id, $token->current_holder_id);
         $this->assertSame($administrator->name, $token->received_by);
+        $this->assertMatchesRegularExpression('/^DLS-\d{8}$/', $token->token_number);
         $this->assertDatabaseHas('token_transfer_histories', [
             'token_id' => $token->id,
             'previous_holder_id' => null,
@@ -415,6 +416,7 @@ class TokenControllerTest extends TestCase
     {
         [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
         $holder = User::factory()->create(['role_id' => $administrator->role_id, 'name' => 'File Review Officer', 'is_active' => true]);
+        User::factory()->create(['role_id' => $administrator->role_id, 'name' => 'Inactive Review Officer', 'is_active' => false]);
         $token = Token::create([
             'token_number' => 'BHC-2608-00001',
             'token_category_id' => $category->id,
@@ -429,9 +431,37 @@ class TokenControllerTest extends TestCase
 
         $response->assertSee('name="current_holder_id"', false);
         $response->assertSeeText('File Review Officer');
+        $response->assertDontSeeText('Inactive Review Officer');
         $response->assertDontSee('name="current_desk_id"', false);
         $response->assertDontSee('name="amount"', false);
         $response->assertDontSee('name="receipt_number"', false);
+    }
+
+    public function test_token_cannot_be_transferred_to_an_inactive_user(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $inactiveHolder = User::factory()->create([
+            'role_id' => $administrator->role_id,
+            'is_active' => false,
+        ]);
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update(['current_holder_id' => $administrator->id]);
+
+        $response = $this->actingAs($administrator)->put(route('tokens.update', $token), [
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'current_holder_id' => $inactiveHolder->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 60,
+            'approved_workers' => 40,
+            'boesl_status' => 'pending',
+            'visa_status' => 'pending',
+            'file_status' => 'active',
+        ]);
+
+        $response->assertSessionHasErrors('current_holder_id');
+        $this->assertSame($administrator->id, $token->fresh()->current_holder_id);
     }
 
     public function test_token_details_offer_view_and_download_pdf_actions(): void
@@ -530,6 +560,53 @@ class TokenControllerTest extends TestCase
 
         $this->assertStringContainsString('Token category', $pdfHtml);
         $this->assertStringContainsString('Demand Letter Submission', $pdfHtml);
+    }
+
+    public function test_token_pdf_displays_creator_dates_and_notes_without_bhc_or_approved_worker_details(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $administrator->update(['name' => 'Token Creation Officer']);
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update([
+            'bhc_number' => 'BHC-PRIVATE-100',
+            'approved_workers' => 27,
+            'received_on' => '2026-08-29',
+            'remarks' => 'Bring the original supporting documents.',
+            'created_at' => '2026-08-30 14:25:00',
+        ]);
+
+        $pdfHtml = view('pdf.token', [
+            'token' => $token->fresh()->load(['company', 'agency', 'category', 'creator.role']),
+        ])->render();
+
+        $this->assertStringContainsString('Received date', $pdfHtml);
+        $this->assertStringContainsString('29 August 2026', $pdfHtml);
+        $this->assertStringContainsString('Token generated date', $pdfHtml);
+        $this->assertStringContainsString('30 August 2026, 14:25', $pdfHtml);
+        $this->assertStringContainsString('Token created by', $pdfHtml);
+        $this->assertStringContainsString('Token Creation Officer', $pdfHtml);
+        $this->assertStringContainsString('Notes', $pdfHtml);
+        $this->assertStringContainsString('Bring the original supporting documents.', $pdfHtml);
+        $this->assertStringNotContainsString('Approved workers', $pdfHtml);
+        $this->assertStringNotContainsString('BHC number', $pdfHtml);
+        $this->assertStringNotContainsString('BHC-PRIVATE-100', $pdfHtml);
+        $this->assertStringNotContainsString('File holder', $pdfHtml);
+    }
+
+    public function test_token_list_displays_the_filtered_result_count(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $matchingToken = $this->createToken($administrator, $company, $agency, $category);
+        $matchingToken->update(['token_number' => 'DLS-11111111']);
+        $otherToken = $this->createToken($administrator, $company, $agency, $category);
+        $otherToken->update(['token_number' => 'DLS-22222222']);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.index', ['q' => '11111111']));
+
+        $response->assertSeeText('1 matching tokens');
+        $response->assertSeeText('1 token record found for the current filters.');
+        $response->assertSeeText('DLS-11111111');
+        $response->assertDontSeeText('DLS-22222222');
     }
 
     public function test_token_pdf_displays_the_required_visa_attestation_count(): void

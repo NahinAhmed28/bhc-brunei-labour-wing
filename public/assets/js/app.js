@@ -78,6 +78,8 @@ document.querySelectorAll('[data-no-hyphen]').forEach((input) => {
 document.querySelectorAll('[data-token-lookup]').forEach((input) => {
     const form = input.closest('form');
     const tokenIdInput = form?.querySelector('[data-token-lookup-value]');
+    const bhcNumberInput = form?.querySelector('[data-token-bhc-number]');
+    const linkedTokenUrl = form?.querySelector('[data-linked-token-url]');
     const options = Array.from(document.querySelectorAll(`#${input.list.id} option`));
 
     const matchToken = () => {
@@ -90,12 +92,23 @@ document.querySelectorAll('[data-token-lookup]').forEach((input) => {
             tokenIdInput.value = option?.dataset.tokenId ?? '';
         }
 
+        if (bhcNumberInput) {
+            bhcNumberInput.value = option?.dataset.bhcNumber || 'Pending';
+        }
+
+        if (linkedTokenUrl) {
+            linkedTokenUrl.href = option?.dataset.tokenUrl ?? '#';
+            linkedTokenUrl.classList.toggle('disabled', ! option);
+            linkedTokenUrl.setAttribute('aria-disabled', option ? 'false' : 'true');
+        }
+
         input.setCustomValidity(query && ! option ? 'Select an authorized BHC or token number from the suggestions.' : '');
     };
 
     input.addEventListener('input', matchToken);
     input.addEventListener('change', matchToken);
     form?.addEventListener('submit', matchToken);
+    matchToken();
 });
 
 const tokenModalElement = document.querySelector('#tokenDetailsModal');

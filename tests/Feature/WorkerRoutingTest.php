@@ -31,6 +31,10 @@ class WorkerRoutingTest extends TestCase
         $response->assertSee('list="token-lookup-options"', false);
         $response->assertSee('value="'.$token->token_number.'"', false);
         $response->assertSee('name="token_id" value="'.$token->id.'"', false);
+        $response->assertSee('id="linked-bhc-number"', false);
+        $response->assertSee('value="'.$token->bhc_number.'"', false);
+        $response->assertSee('href="'.route('tokens.show', $token).'"', false);
+        $response->assertSeeText('View linked token');
     }
 
     public function test_super_administrator_can_type_a_token_number_when_editing_a_worker(): void
@@ -51,6 +55,8 @@ class WorkerRoutingTest extends TestCase
         $response->assertOk();
         $response->assertSee('data-token-lookup', false);
         $response->assertSee('value="'.$token->token_number.'"', false);
+        $response->assertSee('value="'.$token->bhc_number.'"', false);
+        $response->assertSee('data-token-url="'.route('tokens.show', $token).'"', false);
         $response->assertDontSee('data-token-lookup readonly', false);
     }
 
