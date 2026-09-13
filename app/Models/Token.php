@@ -2,9 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Database\Query\Expression;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Token extends Model
@@ -81,6 +85,22 @@ class Token extends Model
     public function transferHistories(): HasMany
     {
         return $this->hasMany(TokenTransferHistory::class)->latest('transferred_at');
+    }
+
+    public function latestTransfer(): HasOne
+    {
+        return $this->hasOne(TokenTransferHistory::class)->ofMany(['transferred_at' => 'max', 'id' => 'max']);
+    }
+
+    #[Scope]
+    protected function onDeskOf(Builder $query, int|Expression $holder): void
+    {
+        $query->where(function (Builder $query) use ($holder): void {
+            $query->whereHas('latestTransfer', fn (Builder $transfer): Builder => $transfer->where('new_holder_id', $holder))
+                ->orWhere(function (Builder $legacyTokens) use ($holder): void {
+                    $legacyTokens->doesntHave('transferHistories')->where('current_holder_id', $holder);
+                });
+        });
     }
 
     public function documents()

@@ -27,8 +27,10 @@ class DashboardNavigationTest extends TestCase
         $response->assertOk();
         $response->assertSee('class="card metric-card metric-card-link"', false);
         $response->assertSee('href="'.route('tokens.index', ['created' => 'today']).'"', false);
-        $response->assertSee('href="'.route('tokens.index', ['boesl_status' => 'pending']).'"', false);
-        $response->assertSee('href="'.route('workers.index', ['flight_status' => 'pending']).'"', false);
+        $response->assertDontSee('href="'.route('tokens.index', ['boesl_status' => 'pending']).'"', false);
+        $response->assertDontSee('href="'.route('workers.index', ['flight_status' => 'pending']).'"', false);
+        $response->assertDontSeeText('Pending BOESL');
+        $response->assertDontSeeText('Awaiting flight');
         $response->assertSee('href="'.route('tokens.index').'"', false);
         $response->assertSee('href="'.route('workers.index').'"', false);
         $response->assertSee('href="'.route('token-categories.index').'"', false);

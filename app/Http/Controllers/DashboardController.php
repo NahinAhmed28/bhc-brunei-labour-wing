@@ -7,6 +7,7 @@ use App\Models\Token;
 use App\Models\User;
 use App\Models\Worker;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -20,18 +21,23 @@ class DashboardController extends Controller
             ['label' => 'Demanded workers', 'value' => Token::sum('demanded_workers'), 'url' => route('tokens.index'), 'icon' => 'people'],
             ['label' => 'Approved workers', 'value' => Token::sum('approved_workers'), 'url' => route('tokens.index'), 'icon' => 'person-check'],
             ['label' => 'Total registered workers', 'value' => Worker::count(), 'url' => route('workers.index'), 'icon' => 'person-vcard'],
-            ['label' => 'Pending BOESL', 'value' => Token::where('boesl_status', 'pending')->count(), 'url' => route('tokens.index', ['boesl_status' => 'pending']), 'icon' => 'hourglass-split'],
-            ['label' => 'Awaiting flight', 'value' => Worker::where('flight_status', 'pending')->count(), 'url' => route('workers.index', ['flight_status' => 'pending']), 'icon' => 'airplane'],
         ];
+
+        $userCounts = User::query()
+            ->select(['id', 'name'])
+            ->where('is_active', true)
+            ->withCount('createdTokens')
+            ->addSelect([
+                'desk_tokens_count' => Token::query()->selectRaw('count(*)')->onDeskOf(DB::raw('users.id')),
+            ])
+            ->withCasts(['desk_tokens_count' => 'integer'])
+            ->orderBy('name')
+            ->get();
 
         return view('dashboard', [
             'metrics' => $metrics,
-            'userTokenCounts' => User::query()
-                ->withCount(['heldTokens', 'createdTokens'])
-                ->where('is_active', true)
-                ->where(fn ($query) => $query->has('heldTokens')->orHas('createdTokens'))
-                ->orderBy('name')
-                ->get(),
+            'userTokenCounts' => $userCounts->filter(fn (User $user): bool => $user->created_tokens_count > 0),
+            'deskTokenCounts' => $userCounts->filter(fn (User $user): bool => $user->desk_tokens_count > 0),
             'showRecentActivity' => $showRecentActivity,
             'recent' => $showRecentActivity ? AuditLog::with('user')->latest()->limit(8)->get() : collect(),
         ]);
