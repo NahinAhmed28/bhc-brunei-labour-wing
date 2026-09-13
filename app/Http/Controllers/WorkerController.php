@@ -7,9 +7,11 @@ use App\Models\Token;
 use App\Models\Worker;
 use App\Models\WorkerStatusHistory;
 use App\Services\AuditService;
+use App\Services\BhcReferenceService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class WorkerController extends Controller
 {
@@ -64,11 +66,12 @@ class WorkerController extends Controller
         return redirect()->route('workers.show', $worker)->with('success', 'Worker linked to token.');
     }
 
-    public function show(Worker $worker)
+    public function show(Worker $worker): View
     {
         $worker->load(['token.company', 'token.agency', 'documents', 'statusHistories.user']);
+        $bhcTokens = BhcReferenceService::matchingTokens($worker->token?->bhc_number);
 
-        return view('workers.show', compact('worker'));
+        return view('workers.show', compact('worker', 'bhcTokens'));
     }
 
     public function edit(Worker $worker)

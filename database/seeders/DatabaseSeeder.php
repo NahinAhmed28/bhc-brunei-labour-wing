@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
             CompanySeeder::class,
             AgencySeeder::class,
             TokenSeeder::class,
+            TeamFourWorkerSeeder::class,
         ]);
     }
 }

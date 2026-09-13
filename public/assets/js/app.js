@@ -197,3 +197,37 @@ tokenModalElement?.addEventListener('hidden.bs.modal', () => {
     tokenModalRequest?.abort();
     tokenModalContent.innerHTML = tokenModalLoading();
 });
+
+document.addEventListener('click', (event) => {
+    const link = event.target.closest('[data-bhc-token-urls]');
+
+    if (! link || event.defaultPrevented || event.button !== 0) {
+        return;
+    }
+
+    const urls = JSON.parse(link.dataset.bhcTokenUrls);
+
+    if (urls.length < 2) {
+        return;
+    }
+
+    event.preventDefault();
+    let blockedTabs = false;
+
+    urls.forEach((url) => {
+        const tokenTab = window.open('', '_blank');
+
+        if (tokenTab) {
+            tokenTab.opener = null;
+            tokenTab.location.href = url;
+        } else {
+            blockedTabs = true;
+        }
+    });
+
+    const fallback = document.querySelector('[data-bhc-token-fallback]');
+
+    if (fallback) {
+        fallback.hidden = ! blockedTabs;
+    }
+});
