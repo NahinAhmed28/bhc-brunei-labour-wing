@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Role;
 use App\Models\Token;
 use App\Models\TokenCategory;
+use App\Models\TokenTransferHistory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -610,7 +611,7 @@ class TokenControllerTest extends TestCase
         $response->assertDontSeeText('DLS-22222222');
     }
 
-    public function test_token_search_submits_when_input_changes(): void
+    public function test_token_filters_submit_when_input_changes(): void
     {
         [$administrator] = $this->createTokenDependencies();
 
@@ -618,8 +619,60 @@ class TokenControllerTest extends TestCase
 
         $response->assertSee('id="token-filter-form"', false);
         $response->assertSee('id="token-search" name="q" type="search"', false);
-        $response->assertSee("search.addEventListener('input'", false);
+        $response->assertSee("form.querySelectorAll('input, select')", false);
+        $response->assertSee("isTextInput ? 'input' : 'change'", false);
         $response->assertSee('form.requestSubmit();', false);
+    }
+
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function test_token_list_filters_by_creator_independently_of_assignee(bool $isActive): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $creator = User::factory()->create(['name' => 'Creator <Officer>', 'is_active' => $isActive]);
+        $matchingToken = $this->createToken($creator, $company, $agency, $category);
+        $matchingToken->update(['current_holder_id' => $administrator->id]);
+        $otherToken = $this->createToken($administrator, $company, $agency, $category);
+        $otherToken->update(['current_holder_id' => $creator->id]);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.index', ['created_by' => $creator->id]));
+
+        $this->assertSame([$matchingToken->id], $response->viewData('tokens')->getCollection()->modelKeys());
+        $response->assertSee('for="creator-filter">Created by</label>', false);
+        $response->assertSee('value="'.$creator->id.'" selected>Creator &lt;Officer&gt;</option>', false);
+        $response->assertSee('for="holder-filter">Assigned to</label>', false);
+    }
+
+    public function test_assigned_to_filter_uses_latest_transfer_and_supports_legacy_assignments(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $holder = User::factory()->create(['name' => 'Assigned Officer', 'is_active' => false]);
+        $legacyToken = $this->createToken($administrator, $company, $agency, $category);
+        $legacyToken->update(['current_holder_id' => $holder->id]);
+        $transferredToken = $this->createToken($administrator, $company, $agency, $category);
+        $transferredToken->update(['current_holder_id' => $administrator->id]);
+        TokenTransferHistory::create([
+            'token_id' => $transferredToken->id,
+            'new_holder_id' => $holder->id,
+            'transferred_by' => $administrator->id,
+            'transferred_at' => '2026-09-02 12:00:00',
+        ]);
+        $noLongerAssigned = $this->createToken($holder, $company, $agency, $category);
+        $noLongerAssigned->update(['current_holder_id' => $holder->id]);
+        foreach ([$holder->id, $administrator->id] as $index => $holderId) {
+            TokenTransferHistory::create([
+                'token_id' => $noLongerAssigned->id,
+                'new_holder_id' => $holderId,
+                'transferred_by' => $administrator->id,
+                'transferred_at' => '2026-09-0'.($index + 1).' 12:00:00',
+            ]);
+        }
+        $this->createToken($administrator, $company, $agency, $category);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.index', ['holder_id' => $holder->id]));
+
+        $this->assertSame([$legacyToken->id, $transferredToken->id], $response->viewData('tokens')->getCollection()->sortBy('id')->modelKeys());
+        $response->assertSee('value="'.$holder->id.'" selected>Assigned Officer</option>', false);
     }
 
     /**
@@ -668,18 +721,23 @@ class TokenControllerTest extends TestCase
         $response->assertDontSee('name="bhc_status"', false);
     }
 
-    public function test_bhc_and_date_filters_combine_and_persist_in_pagination(): void
+    public function test_user_bhc_and_date_filters_combine_and_persist_in_pagination(): void
     {
         [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $creator = User::factory()->create();
         for ($index = 0; $index < 16; $index++) {
-            $token = $this->createToken($administrator, $company, $agency, $category);
-            $token->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-03']);
+            $token = $this->createToken($creator, $company, $agency, $category);
+            $token->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-03', 'current_holder_id' => $administrator->id]);
         }
-        $outsideDateRange = $this->createToken($administrator, $company, $agency, $category);
-        $outsideDateRange->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-01']);
-        $differentBhc = $this->createToken($administrator, $company, $agency, $category);
-        $differentBhc->update(['bhc_number' => 'BHC-999/2026', 'received_on' => '2026-09-03']);
-        $filters = ['bhc_number' => '001/2026', 'from_date' => '2026-09-02', 'to_date' => '2026-09-04'];
+        $outsideDateRange = $this->createToken($creator, $company, $agency, $category);
+        $outsideDateRange->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-01', 'current_holder_id' => $administrator->id]);
+        $differentBhc = $this->createToken($creator, $company, $agency, $category);
+        $differentBhc->update(['bhc_number' => 'BHC-999/2026', 'received_on' => '2026-09-03', 'current_holder_id' => $administrator->id]);
+        $differentCreator = $this->createToken($administrator, $company, $agency, $category);
+        $differentCreator->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-03', 'current_holder_id' => $administrator->id]);
+        $differentHolder = $this->createToken($creator, $company, $agency, $category);
+        $differentHolder->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-03', 'current_holder_id' => $creator->id]);
+        $filters = ['bhc_number' => '001/2026', 'from_date' => '2026-09-02', 'to_date' => '2026-09-04', 'created_by' => (string) $creator->id, 'holder_id' => (string) $administrator->id];
 
         $response = $this->actingAs($administrator)->get(route('tokens.index', $filters));
 
@@ -699,6 +757,12 @@ class TokenControllerTest extends TestCase
     #[TestWith([['to_date' => '2026-02-30'], 'to_date'])]
     #[TestWith([['from_date' => '2026-09-04', 'to_date' => '2026-09-02'], 'to_date'])]
     #[TestWith([['bhc_number' => ['001/2026']], 'bhc_number'])]
+    #[TestWith([['created_by' => 'not-a-user'], 'created_by'])]
+    #[TestWith([['created_by' => 999999], 'created_by'])]
+    #[TestWith([['created_by' => [1]], 'created_by'])]
+    #[TestWith([['holder_id' => 'not-a-user'], 'holder_id'])]
+    #[TestWith([['holder_id' => 999999], 'holder_id'])]
+    #[TestWith([['holder_id' => [1]], 'holder_id'])]
     public function test_token_list_rejects_invalid_filters(array $filters, string $invalidField): void
     {
         [$administrator] = $this->createTokenDependencies();

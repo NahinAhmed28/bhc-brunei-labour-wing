@@ -148,7 +148,17 @@
             </div>
 
             <div>
-                <label class="form-label" for="holder-filter">File Holder</label>
+                <label class="form-label" for="creator-filter">Created by</label>
+                <select class="form-select" id="creator-filter" name="created_by">
+                    <option value="">All users</option>
+                    @foreach($users as $userOption)
+                        <option value="{{ $userOption->id }}" @selected(request('created_by') == $userOption->id)>{{ $userOption->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label" for="holder-filter">Assigned to</label>
                 <select class="form-select" id="holder-filter" name="holder_id">
                     <option value="">All users</option>
                     @foreach($users as $userOption)
@@ -437,12 +447,28 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var form = document.getElementById('token-filter-form');
-    var search = document.getElementById('token-search');
+    var submitTimer;
 
-    if (!form || !search) return;
+    if (!form) return;
 
-    search.addEventListener('input', function () {
-        form.requestSubmit();
+    form.addEventListener('submit', function () {
+        clearTimeout(submitTimer);
+    });
+
+    form.querySelectorAll('input, select').forEach(function (field) {
+        var isTextInput = field.matches('input[type="search"], input[type="text"]');
+
+        field.addEventListener(isTextInput ? 'input' : 'change', function () {
+            clearTimeout(submitTimer);
+
+            if (isTextInput) {
+                submitTimer = setTimeout(function () {
+                    form.requestSubmit();
+                }, 350);
+            } else {
+                form.requestSubmit();
+            }
+        });
     });
 });
 </script>

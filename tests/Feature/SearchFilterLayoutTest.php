@@ -37,7 +37,7 @@ class SearchFilterLayoutTest extends TestCase
     public static function registerFilterPages(): array
     {
         return [
-            'tokens' => ['/tokens', 'filter-grid', ['q', 'company_name', 'agency_name', 'category_id', 'holder_id', 'boesl_status', 'bhc_number', 'from_date', 'to_date', 'pre_selected']],
+            'tokens' => ['/tokens', 'filter-grid', ['q', 'company_name', 'agency_name', 'category_id', 'created_by', 'holder_id', 'boesl_status', 'bhc_number', 'from_date', 'to_date', 'pre_selected']],
             'workers' => ['/workers', 'filter-grid', ['q', 'visa_status', 'flight_status', 'insurance_status', 'ic_status']],
             'companies' => ['/companies', 'filter-grid filter-grid-compact', ['q']],
             'agencies' => ['/agencies', 'filter-grid filter-grid-compact', ['q']],
