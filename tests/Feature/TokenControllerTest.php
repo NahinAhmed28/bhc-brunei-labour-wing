@@ -9,6 +9,7 @@ use App\Models\Token;
 use App\Models\TokenCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class TokenControllerTest extends TestCase
@@ -607,6 +608,209 @@ class TokenControllerTest extends TestCase
         $response->assertSeeText('1 token record found for the current filters.');
         $response->assertSeeText('DLS-11111111');
         $response->assertDontSeeText('DLS-22222222');
+    }
+
+    public function test_token_search_submits_when_input_changes(): void
+    {
+        [$administrator] = $this->createTokenDependencies();
+
+        $response = $this->actingAs($administrator)->get(route('tokens.index'));
+
+        $response->assertSee('id="token-filter-form"', false);
+        $response->assertSee('id="token-search" name="q" type="search"', false);
+        $response->assertSee("search.addEventListener('input'", false);
+        $response->assertSee('form.requestSubmit();', false);
+    }
+
+    /**
+     * @param  array<string, string>  $filters
+     * @param  list<string>  $expectedDates
+     */
+    #[TestWith([['from_date' => '2026-09-02', 'to_date' => '2026-09-04'], ['2026-09-04', '2026-09-03', '2026-09-02']])]
+    #[TestWith([['from_date' => '2026-09-04'], ['2026-09-05', '2026-09-04']])]
+    #[TestWith([['to_date' => '2026-09-02'], ['2026-09-02', '2026-09-01']])]
+    #[TestWith([['from_date' => '2026-09-03', 'to_date' => '2026-09-03'], ['2026-09-03']])]
+    #[TestWith([['from_date' => '2026-09-06'], []])]
+    #[TestWith([['from_date' => '', 'to_date' => '', 'bhc_number' => ''], ['2026-09-05', '2026-09-04', '2026-09-03', '2026-09-02', '2026-09-01']])]
+    public function test_token_list_filters_by_inclusive_received_dates(array $filters, array $expectedDates): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        foreach (['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-05'] as $receivedDate) {
+            $token = $this->createToken($administrator, $company, $agency, $category);
+            $token->update(['received_on' => $receivedDate, 'created_at' => '2026-09-10 12:00:00']);
+        }
+
+        $response = $this->actingAs($administrator)->get(route('tokens.index', $filters));
+
+        $response->assertOk();
+        $this->assertSame($expectedDates, $response->viewData('tokens')->getCollection()
+            ->map(fn (Token $token): string => $token->received_on->format('Y-m-d'))->all());
+    }
+
+    #[TestWith(['BHC-001/2026', '001/2026'])]
+    #[TestWith(['BHC-001/2026', 'BHC-001/2026'])]
+    #[TestWith(['0', '0'])]
+    #[TestWith(["' OR 1=1 --", "' OR 1=1 --"])]
+    #[TestWith(['<script>alert(1)</script>', '<script>alert(1)</script>'])]
+    public function test_bhc_text_filter_searches_only_bhc_numbers(string $bhcNumber, string $search): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $matchingToken = $this->createToken($administrator, $company, $agency, $category);
+        $matchingToken->update(['bhc_number' => $bhcNumber]);
+        $otherToken = $this->createToken($administrator, $company, $agency, $category);
+        $otherToken->update(['token_number' => $search, 'bhc_number' => 'BHC-999/1999']);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.index', ['bhc_number' => $search]));
+
+        $this->assertSame([$matchingToken->id], $response->viewData('tokens')->getCollection()->modelKeys());
+        $response->assertSee('name="bhc_number" type="text"', false);
+        $response->assertSee('value="'.e($search).'"', false);
+        $response->assertDontSee('name="bhc_status"', false);
+    }
+
+    public function test_bhc_and_date_filters_combine_and_persist_in_pagination(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        for ($index = 0; $index < 16; $index++) {
+            $token = $this->createToken($administrator, $company, $agency, $category);
+            $token->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-03']);
+        }
+        $outsideDateRange = $this->createToken($administrator, $company, $agency, $category);
+        $outsideDateRange->update(['bhc_number' => 'BHC-001/2026', 'received_on' => '2026-09-01']);
+        $differentBhc = $this->createToken($administrator, $company, $agency, $category);
+        $differentBhc->update(['bhc_number' => 'BHC-999/2026', 'received_on' => '2026-09-03']);
+        $filters = ['bhc_number' => '001/2026', 'from_date' => '2026-09-02', 'to_date' => '2026-09-04'];
+
+        $response = $this->actingAs($administrator)->get(route('tokens.index', $filters));
+
+        $this->assertSame(16, $response->viewData('tokens')->total());
+        parse_str(parse_url($response->viewData('tokens')->nextPageUrl(), PHP_URL_QUERY), $nextPageFilters);
+        $this->assertSame($filters + ['page' => '2'], $nextPageFilters);
+        $response->assertSee('name="from_date" type="date"', false);
+        $response->assertSee('name="to_date" type="date"', false);
+        $response->assertSee('value="2026-09-02"', false);
+        $response->assertSee('value="2026-09-04"', false);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    #[TestWith([['from_date' => 'not-a-date'], 'from_date'])]
+    #[TestWith([['to_date' => '2026-02-30'], 'to_date'])]
+    #[TestWith([['from_date' => '2026-09-04', 'to_date' => '2026-09-02'], 'to_date'])]
+    #[TestWith([['bhc_number' => ['001/2026']], 'bhc_number'])]
+    public function test_token_list_rejects_invalid_filters(array $filters, string $invalidField): void
+    {
+        [$administrator] = $this->createTokenDependencies();
+
+        $response = $this->actingAs($administrator)->from(route('tokens.index'))
+            ->get(route('tokens.index', $filters));
+
+        $response->assertRedirect(route('tokens.index'));
+        $response->assertSessionHasErrors($invalidField);
+    }
+
+    public function test_edit_form_displays_saved_site_visit_information(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies('administrator');
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update([
+            'site_visit_required' => true,
+            'site_visit_date' => '2026-09-05',
+            'site_visit_by' => 'Officer <Amin>',
+        ]);
+
+        $response = $this->actingAs($administrator)->get(route('tokens.edit', $token));
+
+        $response->assertSeeText('Site Visit Information');
+        $response->assertSee('name="site_visit_required"', false);
+        $response->assertSee('value="1" selected>Yes', false);
+        $response->assertSee('name="site_visit_date"', false);
+        $response->assertSee('value="2026-09-05"', false);
+        $response->assertSee('name="site_visit_by"', false);
+        $response->assertSee('value="Officer &lt;Amin&gt;"', false);
+    }
+
+    #[TestWith([1, '2026-09-05', 'Visiting Officer'])]
+    #[TestWith([0, null, null])]
+    public function test_administrator_can_update_or_clear_site_visit_information(int $required, ?string $visitDate, ?string $visitedBy): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies('administrator');
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update([
+            'site_visit_required' => ! $required,
+            'site_visit_date' => '2026-09-01',
+            'site_visit_by' => 'Previous Officer',
+        ]);
+
+        $response = $this->actingAs($administrator)->put(route('tokens.update', $token), [
+            'company_id' => $company->id,
+            'agency_id' => $agency->id,
+            'token_category_id' => $category->id,
+            'received_on' => '2026-08-30',
+            'demanded_workers' => 60,
+            'boesl_status' => 'pending',
+            'site_visit_required' => $required,
+            'site_visit_date' => $visitDate,
+            'site_visit_by' => $visitedBy,
+        ]);
+
+        $response->assertRedirect(route('tokens.edit', $token));
+        $response->assertSessionHasNoErrors();
+        $token->refresh();
+        $this->assertSame((bool) $required, $token->site_visit_required);
+        $this->assertSame($visitDate, $token->site_visit_date?->format('Y-m-d'));
+        $this->assertSame($visitedBy, $token->site_visit_by);
+        $this->assertDatabaseHas('audit_logs', [
+            'module' => 'tokens',
+            'record_id' => (string) $token->id,
+            'action' => 'update',
+        ]);
+    }
+
+    public function test_invalid_site_visit_information_is_rejected_without_changing_the_token(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies('administrator');
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update(['site_visit_required' => true, 'site_visit_date' => '2026-09-01', 'site_visit_by' => 'Original Officer']);
+
+        $response = $this->actingAs($administrator)->from(route('tokens.edit', $token))
+            ->put(route('tokens.update', $token), [
+                'company_id' => $company->id,
+                'agency_id' => $agency->id,
+                'token_category_id' => $category->id,
+                'received_on' => '2026-08-30',
+                'demanded_workers' => 60,
+                'boesl_status' => 'pending',
+                'site_visit_required' => 'invalid',
+                'site_visit_date' => 'not-a-date',
+                'site_visit_by' => str_repeat('x', 256),
+            ]);
+
+        $response->assertRedirect(route('tokens.edit', $token));
+        $response->assertSessionHasErrors(['site_visit_required', 'site_visit_date', 'site_visit_by']);
+        $token->refresh();
+        $this->assertTrue($token->site_visit_required);
+        $this->assertSame('2026-09-01', $token->site_visit_date->format('Y-m-d'));
+        $this->assertSame('Original Officer', $token->site_visit_by);
+        $this->assertDatabaseCount('audit_logs', 0);
+    }
+
+    public function test_site_visit_form_retains_submitted_values_after_validation_errors(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $token = $this->createToken($administrator, $company, $agency, $category);
+        $token->update(['site_visit_required' => true, 'site_visit_date' => '2026-09-01', 'site_visit_by' => 'Original Officer']);
+
+        $response = $this->actingAs($administrator)->withSession(['_old_input' => [
+            'site_visit_required' => '0',
+            'site_visit_date' => '2026-09-06',
+            'site_visit_by' => 'Replacement Officer',
+        ]])->get(route('tokens.edit', $token));
+
+        $response->assertSee('value="0" selected>No', false);
+        $response->assertSee('value="2026-09-06"', false);
+        $response->assertSee('value="Replacement Officer"', false);
     }
 
     public function test_token_pdf_displays_the_required_visa_attestation_count(): void

@@ -144,6 +144,38 @@
         </div>
     </div>
 
+    @if($token->exists)
+        <div class="card mb-4">
+            <div class="card-header bg-white p-4">
+                <h2 class="section-title mb-0">Site Visit Information</h2>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="site-visit-required">Site Visit Required</label>
+                        <select class="form-select" id="site-visit-required" name="site_visit_required">
+                            <option value="0" @selected(!old('site_visit_required', $token->site_visit_required))>No</option>
+                            <option value="1" @selected(old('site_visit_required', $token->site_visit_required))>Yes</option>
+                        </select>
+                        @error('site_visit_required') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="site-visit-date">Site Visit Date</label>
+                        <input class="form-control" id="site-visit-date" type="date" name="site_visit_date"
+                               value="{{ old('site_visit_date', $token->site_visit_date?->format('Y-m-d')) }}">
+                        @error('site_visit_date') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="site-visited-by">Site Visited By</label>
+                        <input class="form-control" id="site-visited-by" type="text" name="site_visit_by"
+                               value="{{ old('site_visit_by', $token->site_visit_by) }}" maxlength="255">
+                        @error('site_visit_by') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="card mb-4">
         <div class="card-header bg-white p-4">
             <h2 class="section-title mb-0">Processing and file assignment</h2>

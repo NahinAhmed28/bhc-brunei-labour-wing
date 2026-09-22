@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -20,13 +21,23 @@ use Illuminate\Support\Str;
 
 class TokenController extends Controller
 {
-    public function index(Request $r)
+    public function index(Request $r): View
     {
+        $r->validate([
+            'bhc_number' => 'nullable|string|max:100',
+            'from_date' => 'nullable|date_format:Y-m-d',
+            'to_date' => 'nullable|date_format:Y-m-d'.($r->filled('from_date') ? '|after_or_equal:from_date' : ''),
+        ]);
+
         $tokens = Token::with(['company', 'agency', 'category', 'currentHolder.role'])->withCount('workers')->when($r->q, function ($q, $v) {
             $q->where(function ($s) use ($v) {
                 $s->where('token_number', 'like', "%$v%")->orWhere('bhc_number', 'like', "%$v%")->orWhereHas('company', fn ($x) => $x->where('name', 'like', "%$v%"))->orWhereHas('agency', fn ($x) => $x->where('name', 'like', "%$v%"));
             });
-        })->when($r->company_id, fn ($q, $v) => $q->where('company_id', $v))->when($r->agency_id, fn ($q, $v) => $q->where('agency_id', $v))->when($r->company_name, fn ($q, $v) => $q->whereHas('company', fn ($companyQuery) => $companyQuery->where('name', 'like', "%$v%")))->when($r->agency_name, fn ($q, $v) => $q->whereHas('agency', fn ($agencyQuery) => $agencyQuery->where('name', 'like', "%$v%")))->when($r->category_id, fn ($q, $v) => $q->where('token_category_id', $v))->when($r->filled('holder_id'), fn ($q) => $q->onDeskOf($r->integer('holder_id')))->when($r->boesl_status, fn ($q, $v) => $q->where('boesl_status', $v))->when($r->bhc_status === 'pending', fn ($q) => $q->whereNull('bhc_number'))->when($r->bhc_status === 'assigned', fn ($q) => $q->whereNotNull('bhc_number'))->when($r->created === 'today', fn ($q) => $q->whereDate('created_at', today()))->when($r->pre_selected !== null && $r->pre_selected !== '', fn ($q) => $q->where('pre_selected', $r->boolean('pre_selected')))->latest('received_on')->paginate(15)->withQueryString();
+        })->when($r->company_id, fn ($q, $v) => $q->where('company_id', $v))->when($r->agency_id, fn ($q, $v) => $q->where('agency_id', $v))->when($r->company_name, fn ($q, $v) => $q->whereHas('company', fn ($companyQuery) => $companyQuery->where('name', 'like', "%$v%")))->when($r->agency_name, fn ($q, $v) => $q->whereHas('agency', fn ($agencyQuery) => $agencyQuery->where('name', 'like', "%$v%")))->when($r->category_id, fn ($q, $v) => $q->where('token_category_id', $v))->when($r->filled('holder_id'), fn ($q) => $q->onDeskOf($r->integer('holder_id')))->when($r->boesl_status, fn ($q, $v) => $q->where('boesl_status', $v))->when($r->bhc_status === 'pending', fn ($q) => $q->whereNull('bhc_number'))->when($r->bhc_status === 'assigned', fn ($q) => $q->whereNotNull('bhc_number'))->when($r->created === 'today', fn ($q) => $q->whereDate('created_at', today()))->when($r->pre_selected !== null && $r->pre_selected !== '', fn ($q) => $q->where('pre_selected', $r->boolean('pre_selected')))
+            ->when($r->filled('bhc_number'), fn (Builder $query): Builder => $query->where('bhc_number', 'like', '%'.$r->input('bhc_number').'%'))
+            ->when($r->filled('from_date'), fn (Builder $query): Builder => $query->whereDate('received_on', '>=', $r->input('from_date')))
+            ->when($r->filled('to_date'), fn (Builder $query): Builder => $query->whereDate('received_on', '<=', $r->input('to_date')))
+            ->latest('received_on')->paginate(15)->withQueryString();
 
         return view('tokens.index', ['tokens' => $tokens, 'preSelectedCount' => Token::where('pre_selected', true)->count(), 'companies' => Company::orderBy('name')->get(), 'agencies' => Agency::orderBy('name')->get(), 'categories' => TokenCategory::orderBy('name')->get(), 'users' => User::with('role')->where('is_active', true)->orderBy('name')->get()]);
     }

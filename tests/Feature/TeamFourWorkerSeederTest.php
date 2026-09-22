@@ -165,7 +165,7 @@ class TeamFourWorkerSeederTest extends TestCase
     public function test_default_seeding_imports_matching_workbook_workers_and_can_be_rerun(): void
     {
         $this->artisan('db:seed', ['--no-interaction' => true])
-            ->expectsOutput('Team 4 workers: 105 imported, 0 already exist, 21 missing BHC/reference, 63 unmatched, 0 ambiguous, 0 invalid.')
+            ->expectsOutput('Team 4 workers: 111 imported, 0 already exist, 21 missing BHC/reference, 57 unmatched, 0 ambiguous, 0 invalid.')
             ->assertSuccessful();
 
         $this->assertDatabaseHas('workers', [
@@ -178,11 +178,11 @@ class TeamFourWorkerSeederTest extends TestCase
         $this->assertDatabaseMissing('workers', ['passport_number' => 'A12296447']);
 
         $this->artisan('db:seed', ['--class' => TeamFourWorkerSeeder::class, '--no-interaction' => true])
-            ->expectsOutput('Team 4 workers: 0 imported, 105 already exist, 21 missing BHC/reference, 63 unmatched, 0 ambiguous, 0 invalid.')
+            ->expectsOutput('Team 4 workers: 0 imported, 111 already exist, 21 missing BHC/reference, 57 unmatched, 0 ambiguous, 0 invalid.')
             ->assertSuccessful();
 
-        $this->assertDatabaseCount('workers', 105);
-        $this->assertDatabaseCount('tokens', 1304);
+        $this->assertDatabaseCount('workers', 111);
+        $this->assertDatabaseCount('tokens', 1373);
     }
 
     /**

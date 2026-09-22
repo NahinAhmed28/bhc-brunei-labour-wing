@@ -105,11 +105,11 @@
 {{-- ── Filter card ── --}}
 <div class="card mb-4 token-register-card">
     <div class="card-body border-bottom">
-        <form class="filter-grid" method="get">
+        <form class="filter-grid" id="token-filter-form" method="get">
 
             <div class="filter-search">
                 <label class="form-label" for="token-search">Search</label>
-                <input class="form-control" id="token-search" name="q" value="{{ request('q') }}"
+                <input class="form-control" id="token-search" name="q" type="search" value="{{ request('q') }}"
                        placeholder="Token no., BHC no., company or agency">
             </div>
 
@@ -169,19 +169,20 @@
 
             <div>
                 <label class="form-label" for="bhc-filter">BHC No.</label>
-                <select class="form-select" id="bhc-filter" name="bhc_status">
-                    <option value="">All</option>
-                    <option value="pending"  @selected(request('bhc_status') === 'pending')>Pending</option>
-                    <option value="assigned" @selected(request('bhc_status') === 'assigned')>Assigned</option>
-                </select>
+                <input class="form-control" id="bhc-filter" name="bhc_number" type="text"
+                       value="{{ request('bhc_number') }}" placeholder="Type BHC number" maxlength="100">
             </div>
 
             <div>
-                <label class="form-label" for="created-filter">Date</label>
-                <select class="form-select" id="created-filter" name="created">
-                    <option value="">All dates</option>
-                    <option value="today" @selected(request('created') === 'today')>Today</option>
-                </select>
+                <label class="form-label" for="from-date-filter">From Date</label>
+                <input class="form-control" id="from-date-filter" name="from_date" type="date"
+                       value="{{ request('from_date') }}" title="Received on or after this date">
+            </div>
+
+            <div>
+                <label class="form-label" for="to-date-filter">To Date</label>
+                <input class="form-control" id="to-date-filter" name="to_date" type="date"
+                       value="{{ request('to_date') }}" title="Received on or before this date">
             </div>
 
             <div>
@@ -431,3 +432,18 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('token-filter-form');
+    var search = document.getElementById('token-search');
+
+    if (!form || !search) return;
+
+    search.addEventListener('input', function () {
+        form.requestSubmit();
+    });
+});
+</script>
+@endpush
