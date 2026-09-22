@@ -184,13 +184,13 @@
             </div>
 
             <div>
-                <label class="form-label" for="from-date-filter">From Date</label>
+                <label class="form-label" for="from-date-filter">Received Date From</label>
                 <input class="form-control" id="from-date-filter" name="from_date" type="date"
                        value="{{ request('from_date') }}" title="Received on or after this date">
             </div>
 
             <div>
-                <label class="form-label" for="to-date-filter">To Date</label>
+                <label class="form-label" for="to-date-filter">Received Date To</label>
                 <input class="form-control" id="to-date-filter" name="to_date" type="date"
                        value="{{ request('to_date') }}" title="Received on or before this date">
             </div>
