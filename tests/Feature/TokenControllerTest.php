@@ -611,7 +611,7 @@ class TokenControllerTest extends TestCase
         $response->assertDontSeeText('DLS-22222222');
     }
 
-    public function test_token_filters_submit_when_input_changes(): void
+    public function test_token_list_loads_background_filter_controls(): void
     {
         [$administrator] = $this->createTokenDependencies();
 
@@ -619,9 +619,65 @@ class TokenControllerTest extends TestCase
 
         $response->assertSee('id="token-filter-form"', false);
         $response->assertSee('id="token-search" name="q" type="search"', false);
-        $response->assertSee("form.querySelectorAll('input, select')", false);
-        $response->assertSee("isTextInput ? 'input' : 'change'", false);
-        $response->assertSee('form.requestSubmit();', false);
+        $response->assertSee('id="token-results"', false);
+        $response->assertSee('id="token-filter-error"', false);
+        $response->assertSee('src="'.asset('assets/js/token-filters.js').'"', false);
+    }
+
+    public function test_background_filtering_returns_only_matching_results_counts_and_pagination(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        for ($index = 0; $index < 16; $index++) {
+            $token = $this->createToken($administrator, $company, $agency, $category);
+            $token->update(['token_number' => 'MATCH-'.$index, 'received_on' => '2026-09-03']);
+        }
+        $otherToken = $this->createToken($administrator, $company, $agency, $category);
+        $otherToken->update(['token_number' => 'EXCLUDED-TOKEN']);
+
+        $response = $this->actingAs($administrator)->getJson(route('tokens.index', [
+            'q' => 'MATCH', 'from_date' => '2026-09-03', 'to_date' => '2026-09-03', 'page' => 2,
+        ]));
+
+        $response->assertOk()->assertJsonPath('matching_count', '16');
+        $html = $response->json('html');
+        $this->assertStringContainsString('MATCH-', $html);
+        $this->assertStringNotContainsString('EXCLUDED-TOKEN', $html);
+        $this->assertStringContainsString('token-table-view', $html);
+        $this->assertStringContainsString('token-card-view', $html);
+        $this->assertStringContainsString('data-token-modal-url=', $html);
+        $this->assertStringContainsString('list-pagination', $html);
+        $this->assertStringContainsString('q=MATCH', $html);
+        $this->assertStringContainsString('from_date=2026-09-03', $html);
+        $this->assertStringNotContainsString('token-filter-form', $html);
+        $this->assertStringNotContainsString('<html', $html);
+    }
+
+    public function test_background_filtering_returns_an_empty_list_when_nothing_matches(): void
+    {
+        [$administrator, $company, $agency, $category] = $this->createTokenDependencies();
+        $this->createToken($administrator, $company, $agency, $category);
+
+        $response = $this->actingAs($administrator)->getJson(route('tokens.index', ['q' => 'NO-MATCH']));
+
+        $response->assertOk()->assertJsonPath('matching_count', '0');
+        $this->assertStringContainsString('No token submissions match these filters.', $response->json('html'));
+        $this->assertStringNotContainsString('list-pagination', $response->json('html'));
+    }
+
+    public function test_background_filtering_returns_validation_errors_without_redirecting(): void
+    {
+        [$administrator] = $this->createTokenDependencies();
+
+        $response = $this->actingAs($administrator)->getJson(route('tokens.index', [
+            'from_date' => '2026-09-04', 'to_date' => '2026-09-02',
+        ]));
+
+        $response->assertUnprocessable()->assertJsonValidationErrors('to_date');
+    }
+
+    public function test_background_filtering_requires_authentication(): void
+    {
+        $this->getJson(route('tokens.index'))->assertUnauthorized();
     }
 
     #[TestWith([true])]

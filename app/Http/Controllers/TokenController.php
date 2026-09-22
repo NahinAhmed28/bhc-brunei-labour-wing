@@ -13,6 +13,7 @@ use App\Services\AuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -21,7 +22,7 @@ use Illuminate\Support\Str;
 
 class TokenController extends Controller
 {
-    public function index(Request $r): View
+    public function index(Request $r): View|JsonResponse
     {
         $r->validate([
             'created_by' => 'nullable|integer|exists:users,id',
@@ -41,6 +42,13 @@ class TokenController extends Controller
             ->when($r->filled('from_date'), fn (Builder $query): Builder => $query->whereDate('received_on', '>=', $r->input('from_date')))
             ->when($r->filled('to_date'), fn (Builder $query): Builder => $query->whereDate('received_on', '<=', $r->input('to_date')))
             ->latest('received_on')->paginate(15)->withQueryString();
+
+        if ($r->expectsJson()) {
+            return response()->json([
+                'html' => view('tokens.results', ['tokens' => $tokens])->render(),
+                'matching_count' => number_format($tokens->total()),
+            ]);
+        }
 
         return view('tokens.index', ['tokens' => $tokens, 'preSelectedCount' => Token::where('pre_selected', true)->count(), 'companies' => Company::orderBy('name')->get(), 'agencies' => Agency::orderBy('name')->get(), 'categories' => TokenCategory::orderBy('name')->get(), 'users' => User::orderBy('name')->get(['id', 'name'])]);
     }
